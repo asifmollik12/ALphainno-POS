@@ -15,7 +15,7 @@ class SsoLoginController extends Controller
         $plainToken = (string) $request->query('token', '');
 
         if ($plainToken === '') {
-            return redirect()->route('login')->withErrors([
+            return redirect(rtrim(config('app.url'), '/').'/login')->withErrors([
                 'email' => 'Invalid or expired sign-in link.',
             ]);
         }
@@ -30,7 +30,7 @@ class SsoLoginController extends Controller
             ->first();
 
         if (! $record) {
-            return redirect()->route('login')->withErrors([
+            return redirect(rtrim(config('app.url'), '/').'/login')->withErrors([
                 'email' => 'Invalid or expired sign-in link.',
             ]);
         }
@@ -41,7 +41,7 @@ class SsoLoginController extends Controller
             ->first();
 
         if (! $user) {
-            return redirect()->route('login')->withErrors([
+            return redirect(rtrim(config('app.url'), '/').'/login')->withErrors([
                 'email' => 'Account not found. Please contact support.',
             ]);
         }

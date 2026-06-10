@@ -33,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
 
         Schema::defaultStringLength(191);
 
+        if ($rootUrl = config('app.url')) {
+            \Illuminate\Support\Facades\URL::forceRootUrl(rtrim($rootUrl, '/'));
+        }
+
         /* ADD THIS LINES */
         $this->commands([
             InstallCommand::class,

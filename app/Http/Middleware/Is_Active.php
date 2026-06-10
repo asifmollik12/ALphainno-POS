@@ -20,7 +20,7 @@ class Is_Active
         if (Auth::check() && ! Auth::user()->statut) {
             Auth::logout();
 
-            return redirect('/login')->with('erro_login', 'Your error text');
+            return redirect(rtrim(config('app.url'), '/').'/login')->with('erro_login', 'Your error text');
         }
 
         return $response;
