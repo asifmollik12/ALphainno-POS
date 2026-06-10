@@ -245,9 +245,14 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active', 'request.safety']
             } else {
                 return view('layouts.master');
             }
-        })->where('vue', '^(?!api|setup|update|password|online_store|customer-display|quickbooks|portal|recruit|api-docs|csrf-token|login|logout).*$');
+        })->where('vue', '^(?!api|setup|update|password|online_store|customer-display|quickbooks|portal|recruit|api-docs|csrf-token|login|logout|sso).*$');
 
 });
+
+// SaaS single sign-on (Alphainno dashboard → POS)
+Route::get('sso/login', \App\Http\Controllers\Auth\SsoLoginController::class)
+    ->middleware('web')
+    ->name('sso.login');
 
 // Laravel 12 compatibility: define auth routes explicitly (laravel/ui optional)
 Route::get('login', 'Auth\LoginController@showLoginForm')->name('login');

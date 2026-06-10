@@ -85,6 +85,18 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'saas' => [
+            'driver' => 'mysql',
+            'host' => env('SAAS_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('SAAS_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('SAAS_DB_DATABASE', 'alphainno'),
+            'username' => env('SAAS_DB_USERNAME', env('DB_USERNAME', 'forge')),
+            'password' => env('SAAS_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8mb4',
+            'strict' => false,
+            'engine' => 'InnoDB',
+        ],
+
     ],
 
     /*
