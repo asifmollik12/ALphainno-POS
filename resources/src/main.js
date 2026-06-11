@@ -105,6 +105,21 @@ const stockyBase = appBasePath();
 window.axios.defaults.baseURL = stockyBase ? `${stockyBase}/api/` : '/api/';
 window.axios.defaults.withCredentials = true;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+// Do not read XSRF-TOKEN from document.cookie — SaaS and POS share a domain
+// and can leave duplicate cookie names at different paths. Use the page meta tag.
+window.axios.defaults.xsrfCookieName = null;
+window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
+
+const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+if (csrfMeta && csrfMeta.content) {
+  window.axios.defaults.headers.common['X-XSRF-TOKEN'] = csrfMeta.content;
+  window.axios.interceptors.request.use((config) => {
+    if (csrfMeta.content) {
+      config.headers['X-XSRF-TOKEN'] = csrfMeta.content;
+    }
+    return config;
+  });
+}
 
 // ==============================
 // Initial load loader control
