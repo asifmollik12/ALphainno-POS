@@ -2,6 +2,7 @@ import store from "./store";
 
 import Vue from "vue";
 import router, { setupRouterGuards } from "./router";
+import { appBasePath, appBaseUrl } from "./config/appBase";
 
 import App from "./App.vue";
 import Auth from './auth/index.js';
@@ -100,7 +101,8 @@ Vue.component('lucide-icon', LucideIcon);
 
 window.axios = require('axios');
 
-window.axios.defaults.baseURL = '/api/';
+const stockyBase = appBasePath();
+window.axios.defaults.baseURL = stockyBase ? `${stockyBase}/api/` : '/api/';
 window.axios.defaults.withCredentials = true;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -167,7 +169,7 @@ async function hardLogoutToLogin() {
     // ignore: we still want to navigate to /login
   }
 
-  window.location.replace("/login");
+  window.location.replace(appBaseUrl('login'));
 }
 
 // ==============================

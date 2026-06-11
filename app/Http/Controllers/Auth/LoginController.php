@@ -99,7 +99,7 @@ class LoginController extends Controller
                 // Never break login if tracking fails
             }
 
-            return redirect()->away("https://erp.alphainno.com/pos/dashboard");
+            return redirect()->away(rtrim(config('app.url'), '/').'/');
         }
 
         // Failed login

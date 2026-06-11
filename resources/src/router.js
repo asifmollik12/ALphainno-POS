@@ -2,6 +2,7 @@ import Vue from "vue";
 import store from "./store";
 import NProgress from "nprogress";
 import Router from "vue-router";
+import { appBasePath } from "./config/appBase";
 Vue.use(Router);
 
 
@@ -2626,6 +2627,7 @@ const baseRoutes = [
 
 const router = new Router({
     mode: "history",
+    base: appBasePath() ? `${appBasePath()}/` : '/',
     linkActiveClass: "open",
     routes: baseRoutes,
     scrollBehavior(to, from, savedPosition) {
