@@ -99,7 +99,7 @@ class LoginController extends Controller
                 // Never break login if tracking fails
             }
 
-            return redirect()->away(rtrim(config('app.url'), '/').'/');
+            return redirect()->away(rtrim(config('app.url'), '/').'/app/dashboard');
         }
 
         // Failed login

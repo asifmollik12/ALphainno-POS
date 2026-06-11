@@ -1,5 +1,8 @@
 import axios from 'axios';
 import Util from './index';
+import { appBasePath, appBaseUrl } from '../config/appBase';
+
+const posApiBase = () => (appBasePath() ? `${appBasePath()}/` : '/');
 
 // Simple module-level guards to prevent duplicate listeners and concurrent syncs
 let listenersAttached = false;
@@ -24,7 +27,7 @@ export async function syncOfflineSalesQueue() {
   // still effectively offline.
   try {
     // Use explicit /api path without double-prefixing the global axios baseURL.
-    const res = await axios.get('/api/ping', { timeout: 2000, baseURL: '' });
+    const res = await axios.get('api/ping', { timeout: 2000, baseURL: posApiBase() });
     const ok = !!(res && res.status === 200 && res.data && res.data.ok === true);
     if (!ok) return;
   } catch (e) {
@@ -82,7 +85,7 @@ export async function syncOfflineSalesQueue() {
         };
 
         // Use explicit /api path without double-prefixing the global axios baseURL.
-        const response = await axios.post('/api/pos/create_pos', payload, { baseURL: '' });
+        const response = await axios.post('api/pos/create_pos', payload, { baseURL: posApiBase() });
         if (response && response.data && response.data.success === true) {
           Util.offlinePos.markSaleAsSynced(sale.id, response.data.id);
           syncedCount++;

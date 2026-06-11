@@ -27,7 +27,7 @@ class RedirectIfAuthenticated
                 case 'store':
                     return redirect('/online_store');
                 default:
-                    return redirect()->away(rtrim(config('app.url'), '/').'/');
+                    return redirect()->away(rtrim(config('app.url'), '/').'/app/dashboard');
             }
         }
     

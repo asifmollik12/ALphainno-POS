@@ -158,10 +158,10 @@ async function hardLogoutToLogin() {
   try {
     // Use a non-API baseURL, and bypass the auth-redirect logic for this call.
     await axios.post(
-      "/logout",
+      "logout",
       {},
       {
-        baseURL: "",
+        baseURL: stockyBase ? `${stockyBase}/` : "/",
         meta: { skipAuthRedirect: true, skipInitialLoader: true },
       }
     );

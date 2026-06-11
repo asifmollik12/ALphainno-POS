@@ -51,6 +51,6 @@ class SsoLoginController extends Controller
         Auth::guard('web')->login($user, true);
         $request->session()->regenerate();
 
-        return redirect()->away(rtrim(config('app.url'), '/').'/');
+        return redirect()->away(rtrim(config('app.url'), '/').'/app/dashboard');
     }
 }

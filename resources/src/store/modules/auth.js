@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import { appBasePath, appBaseUrl } from '../../config/appBase';
 
 Vue.use(Vuex);
 
@@ -138,10 +139,10 @@ const actions = {
     },
 
    logout({ commit }) {
-    axios.post('/logout', {}, { baseURL: '' }) // override the baseURL here
+    const webBase = appBasePath() ? `${appBasePath()}/` : '/';
+    axios.post('logout', {}, { baseURL: webBase })
         .then(() => {
-            // Full page navigation OUT of the SPA
-            window.location.replace('/login');
+            window.location.replace(appBaseUrl('login'));
         });
     }
 };
