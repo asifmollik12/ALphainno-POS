@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Concerns\ClearsConflictingRootCookies;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class SsoLoginController extends Controller
 {
+    use ClearsConflictingRootCookies;
     public function __invoke(Request $request)
     {
         $plainToken = (string) $request->query('token', '');
@@ -51,6 +53,6 @@ class SsoLoginController extends Controller
         Auth::guard('web')->login($user, true);
         $request->session()->regenerate();
 
-        return redirect()->away(rtrim(config('app.url'), '/').'/app/dashboard');
+        return $this->redirectToPosDashboard();
     }
 }

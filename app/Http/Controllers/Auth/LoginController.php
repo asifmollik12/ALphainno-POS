@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Concerns\ClearsConflictingRootCookies;
 use App\Http\Controllers\Controller;
 use App\Models\UserLoginSession;
 use App\Providers\RouteServiceProvider;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
+    use ClearsConflictingRootCookies;
     /*
     |--------------------------------------------------------------------------
     | Login Controller
@@ -99,7 +101,7 @@ class LoginController extends Controller
                 // Never break login if tracking fails
             }
 
-            return redirect()->away(rtrim(config('app.url'), '/').'/app/dashboard');
+            return $this->redirectToPosDashboard();
         }
 
         // Failed login
