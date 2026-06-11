@@ -771,7 +771,7 @@
           submitted = true;
           setBusy();
 
-          fetch('/csrf-token', {
+          fetch(@json(url('/csrf-token')), {
             method: 'GET',
             credentials: 'same-origin',
             cache: 'no-store',
