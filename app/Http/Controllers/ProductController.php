@@ -110,6 +110,14 @@ class ProductController extends Controller
         return view('products.show', compact('product', 'currency'));
     }
 
+    public function barcode(Product $product, Request $request)
+    {
+        $this->authorizeProduct($product);
+        $currency = $request->user()->shopSetting?->currency ?? '৳';
+
+        return view('products.barcode', compact('product', 'currency'));
+    }
+
     public function edit(Product $product)
     {
         $this->authorizeProduct($product);

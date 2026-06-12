@@ -126,10 +126,8 @@
                     <td class="px-4 py-3 text-right {{ $product->isShortage() ? 'text-red-600 font-semibold' : '' }}">{{ $product->stock }}</td>
                     <td class="px-4 py-3">{{ $product->unit ?? 'Pcs' }}</td>
                     <td class="px-4 py-3 text-right">{{ $product->min_stock }}</td>
-                    <td class="px-4 py-3 text-right whitespace-nowrap">
-                        <a href="{{ route('products.show', $product) }}" class="text-ai-cyan hover:underline font-medium">View</a>
-                        <a href="{{ route('products.edit', $product) }}" class="text-ai-purple hover:underline font-medium ml-2">Edit</a>
-                        <form method="POST" action="{{ route('products.destroy', $product) }}" class="inline ml-2" onsubmit="return confirm('Delete this product?')">@csrf @method('DELETE')<button class="text-red-600 hover:underline">Delete</button></form>
+                    <td class="px-4 py-3 text-center relative">
+                        @include('products._actions-menu', ['product' => $product])
                     </td>
                 </tr>
                 @empty
