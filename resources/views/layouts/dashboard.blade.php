@@ -15,7 +15,9 @@
     @stack('head')
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased">
-@php($posFullscreen = View::hasSection('pos_fullscreen'))
+@php
+    $posFullscreen = View::hasSection('pos_fullscreen');
+@endphp
 <div class="flex min-h-screen">
     {{-- Sidebar --}}
     <aside class="w-64 bg-[#0f172a] text-slate-200 flex flex-col fixed inset-y-0 left-0 z-30">
