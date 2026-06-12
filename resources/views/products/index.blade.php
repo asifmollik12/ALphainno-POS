@@ -100,6 +100,7 @@
                     <th class="px-4 py-3">SKU</th>
                     <th class="px-4 py-3 text-right">Purchase Price</th>
                     <th class="px-4 py-3 text-right">Sale Price</th>
+                    <th class="px-4 py-3 text-right">VAT</th>
                     <th class="px-4 py-3 text-right">Quantity</th>
                     <th class="px-4 py-3">UOM</th>
                     <th class="px-4 py-3 text-right">Reorder Qty</th>
@@ -123,6 +124,7 @@
                     <td class="px-4 py-3 text-slate-500">{{ $product->sku ?: '—' }}</td>
                     <td class="px-4 py-3 text-right">{{ $fmtMoney($product->cost_price) }}</td>
                     <td class="px-4 py-3 text-right font-medium">{{ $fmtMoney($product->price) }}</td>
+                    <td class="px-4 py-3 text-right text-slate-600">{{ number_format($product->tax_rate ?? 0, 1) }}%</td>
                     <td class="px-4 py-3 text-right {{ $product->isShortage() ? 'text-red-600 font-semibold' : '' }}">{{ $product->stock }}</td>
                     <td class="px-4 py-3">{{ $product->unit ?? 'Pcs' }}</td>
                     <td class="px-4 py-3 text-right">{{ $product->min_stock }}</td>
@@ -131,7 +133,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="12" class="px-4 py-16 text-center text-slate-400">No products found.</td></tr>
+                <tr><td colspan="13" class="px-4 py-16 text-center text-slate-400">No products found.</td></tr>
                 @endforelse
             </tbody>
         </table>

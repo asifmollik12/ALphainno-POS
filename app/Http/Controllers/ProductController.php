@@ -50,7 +50,7 @@ class ProductController extends Controller
 
         return response()->streamDownload(function () use ($products) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['ID', 'Name', 'Brand', 'Category', 'SKU', 'Purchase Price', 'Sale Price', 'Quantity', 'UOM', 'Reorder Qty']);
+            fputcsv($out, ['ID', 'Name', 'Brand', 'Category', 'SKU', 'Purchase Price', 'Sale Price', 'VAT %', 'Quantity', 'UOM', 'Reorder Qty']);
             foreach ($products as $p) {
                 fputcsv($out, [
                     $p->id,
@@ -60,6 +60,7 @@ class ProductController extends Controller
                     $p->sku,
                     $p->cost_price,
                     $p->price,
+                    $p->tax_rate ?? 0,
                     $p->stock,
                     $p->unit ?? 'Pcs',
                     $p->min_stock,

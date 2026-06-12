@@ -65,6 +65,7 @@
                 <th>SKU</th>
                 <th class="r">Purchase</th>
                 <th class="r">Sale</th>
+                <th class="r">VAT</th>
                 <th class="r">Qty</th>
                 <th>UOM</th>
                 <th class="r">Reorder</th>
@@ -80,6 +81,7 @@
                 <td>{{ $product->sku ?: '—' }}</td>
                 <td class="r">{{ $fmt($product->cost_price) }}</td>
                 <td class="r">{{ $fmt($product->price) }}</td>
+                <td class="r">{{ number_format($product->tax_rate ?? 0, 1) }}%</td>
                 <td class="r {{ $product->isShortage() ? 'short' : '' }}">{{ $product->stock }}</td>
                 <td>{{ $product->unit ?? 'Pcs' }}</td>
                 <td class="r">{{ $product->min_stock }}</td>
