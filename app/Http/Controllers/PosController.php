@@ -28,6 +28,8 @@ class PosController extends Controller
         $categories = Product::where('user_id', $userId)->whereNotNull('category')->distinct()->pluck('category')->filter()->sort()->values();
         $brands = Product::where('user_id', $userId)->whereNotNull('brand')->distinct()->pluck('brand')->filter()->sort()->values();
 
+        $defaultTaxRate = (float) ($setting->default_tax_rate ?? 0);
+
         $productCatalog = $products->map(fn ($p) => [
             'id' => $p->id,
             'name' => $p->name,
@@ -37,6 +39,7 @@ class PosController extends Controller
             'category' => $p->category,
             'brand' => $p->brand,
             'barcode' => $p->barcode ?? $p->sku,
+            'tax_rate' => (float) ($p->tax_rate > 0 ? $p->tax_rate : $defaultTaxRate),
         ])->values();
 
         return view('pos.index', compact('products', 'customers', 'categories', 'brands', 'setting', 'productCatalog'));
@@ -59,9 +62,9 @@ class PosController extends Controller
         ]);
 
         $userId = $request->user()->id;
-        $taxRate = (float) ($request->user()->shopSetting?->default_tax_rate ?? 0);
+        $defaultTaxRate = (float) ($request->user()->shopSetting?->default_tax_rate ?? 0);
 
-        $sale = DB::transaction(function () use ($data, $userId, $taxRate) {
+        $sale = DB::transaction(function () use ($data, $userId, $defaultTaxRate) {
             $productIds = collect($data['items'])->pluck('product_id')->unique()->all();
             $products = Product::query()
                 ->where('user_id', $userId)
@@ -89,7 +92,8 @@ class PosController extends Controller
                 $lineSub = round($product->price * $qty, 2);
                 $discount = round((float) ($item['discount'] ?? 0), 2);
                 $taxable = max($lineSub - $discount, 0);
-                $lineTax = round($taxable * ($taxRate / 100), 2);
+                $lineTaxRate = (float) ($product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate);
+                $lineTax = round($taxable * ($lineTaxRate / 100), 2);
                 $lineTotal = round($taxable + $lineTax, 2);
 
                 $subtotal += $lineSub;
@@ -100,7 +104,7 @@ class PosController extends Controller
                     'product' => $product,
                     'quantity' => $qty,
                     'discount' => $discount,
-                    'tax_rate' => $taxRate,
+                    'tax_rate' => $lineTaxRate,
                     'tax_amount' => $lineTax,
                     'subtotal' => $lineTotal,
                 ];

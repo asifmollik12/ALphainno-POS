@@ -146,7 +146,7 @@
     <div class="flex-1 flex flex-col bg-white min-h-[50vh] lg:min-h-0">
         <div class="bg-ai-navy text-white px-4 py-2 flex items-center justify-between text-sm">
             <span class="font-semibold">Checkout</span>
-            <span class="text-blue-300">{{ $warehouse }} · Tax {{ $taxRate }}%</span>
+            <span class="text-blue-300">{{ $warehouse }} · VAT per product</span>
         </div>
         <form method="POST" action="{{ route('pos.checkout') }}" id="checkout-form" class="flex flex-col flex-1">
             @csrf
@@ -294,7 +294,7 @@
 <script>
 (() => {
     const currency = @json($currency);
-    const taxRate = @json($taxRate);
+    const defaultTaxRate = @json($taxRate);
     const categories = @json($categories);
     const brands = @json($brands);
     const products = @json($productCatalog);
@@ -451,8 +451,9 @@
         cart.forEach(item => {
             const lineSub = item.price * item.qty;
             const taxable = Math.max(lineSub - item.discount, 0);
-            const lineTax = taxable * (taxRate / 100);
-            const lineTotal = taxable + lineTax;
+            const itemTaxRate = Number(item.tax_rate ?? defaultTaxRate) || 0;
+            const lineTax = Math.round(taxable * (itemTaxRate / 100) * 100) / 100;
+            const lineTotal = Math.round((taxable + lineTax) * 100) / 100;
             subtotal += lineSub;
             totalDiscount += item.discount;
             totalTax += lineTax;
