@@ -8,7 +8,7 @@
         :root {
             --brand: #8b5cf6;
             --brand-dark: #7c3aed;
-            --brand-cyan: #22d3ee;
+            --brand-cyan: #1e3a8a;
             --ink: #0c1222;
             --muted: #64748b;
             --line: #e2e8f0;
@@ -325,7 +325,7 @@
 
         .totals-box .row.grand {
             background: linear-gradient(135deg, var(--brand-cyan), var(--brand));
-            color: var(--ink);
+            color: #fff;
             font-size: 10pt;
             font-weight: 800;
         }

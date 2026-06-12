@@ -16,7 +16,7 @@
     <div class="lg:w-[42%] xl:w-[38%] bg-ai-sky/40 border-r border-ai-grey/60 p-3 flex flex-col min-h-[50vh] lg:min-h-0">
         <div class="bg-white rounded-md border border-ai-grey/80 p-3 shadow-sm mb-2">
             <div class="flex mb-2 overflow-hidden rounded-md">
-                <button type="button" id="tab-category" class="filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-cyan text-ai-navy">Category</button>
+                <button type="button" id="tab-category" class="filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-cyan text-white">Category</button>
                 <button type="button" id="tab-brand" class="filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-navy text-white/60">Brand</button>
             </div>
             <input type="text" id="search-name" placeholder="Search By Name" class="w-full mb-2 rounded border-ai-grey text-sm py-2 px-3 focus:border-ai-purple focus:ring-ai-purple/30">
@@ -61,7 +61,7 @@
     <div class="flex-1 flex flex-col bg-white min-h-[50vh] lg:min-h-0">
         <div class="bg-ai-navy text-white px-4 py-2 flex items-center justify-between text-sm">
             <span class="font-semibold">Checkout</span>
-            <span class="text-ai-cyan/90">{{ $warehouse }} · Tax {{ $taxRate }}%</span>
+            <span class="text-blue-300">{{ $warehouse }} · Tax {{ $taxRate }}%</span>
         </div>
         <form method="POST" action="{{ route('pos.checkout') }}" id="checkout-form" class="flex flex-col flex-1">
             @csrf
@@ -138,7 +138,7 @@
                         <input type="hidden" name="paid_amount" id="paid-amount" value="0">
                         <input type="hidden" name="order_discount" id="order-discount" value="0">
                         <div id="checkout-fields"></div>
-                        <button type="submit" id="pay-btn" disabled class="flex-1 py-2.5 rounded bg-gradient-to-r from-ai-cyan to-ai-purple hover:opacity-90 disabled:opacity-40 text-ai-navy disabled:text-slate-500 font-semibold flex items-center justify-center gap-2">
+                        <button type="submit" id="pay-btn" disabled class="flex-1 py-2.5 rounded bg-gradient-to-r from-ai-cyan to-ai-purple hover:opacity-90 disabled:opacity-40 text-white disabled:text-slate-400 font-semibold flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/></svg>
                             Pay
                         </button>
@@ -174,7 +174,7 @@
             <div><label class="text-red-600 font-medium">Country *</label><input name="billing_country" required class="w-full mt-1 rounded border-slate-300" value="Bangladesh"></div>
             <div><label class="text-red-600 font-medium">City *</label><input name="billing_city" required class="w-full mt-1 rounded border-slate-300"></div>
             <div class="md:col-span-2 flex gap-3 pt-2">
-                <button type="submit" class="px-6 py-2 bg-ai-cyan text-ai-navy rounded-lg font-medium">Save</button>
+                <button type="submit" class="px-6 py-2 bg-ai-cyan text-white rounded-lg font-medium">Save</button>
                 <button type="button" id="cancel-customer-modal" class="px-6 py-2 bg-ai-navy text-white rounded-lg">Cancel</button>
             </div>
         </form>
@@ -233,13 +233,13 @@
         document.addEventListener(evt, unlockSound, { once: true, capture: true });
     });
 
-    const TAB_CYAN_ON = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-cyan text-ai-navy';
+    const TAB_CYAN_ON = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-cyan text-white';
     const TAB_CYAN_OFF = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-navy text-white/60';
     const TAB_PURPLE_ON = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-purple text-white';
     const TAB_PURPLE_OFF = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-navy text-white/60';
 
     function chipActiveClass() {
-        return filterMode === 'category' ? 'bg-ai-cyan text-ai-navy' : 'bg-ai-purple text-white';
+        return filterMode === 'category' ? 'bg-ai-cyan text-white' : 'bg-ai-purple text-white';
     }
 
     function renderChips() {

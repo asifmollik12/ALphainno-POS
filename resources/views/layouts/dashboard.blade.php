@@ -12,7 +12,7 @@
                     colors: {
                         ai: {
                             navy: '#0c1222',
-                            cyan: '#22d3ee',
+                            cyan: '#1e3a8a',
                             purple: '#8b5cf6',
                             sky: '#e0f2fe',
                             mist: '#f1f5f9',
@@ -26,7 +26,7 @@
     <style>
         :root {
             --ai-navy: #0c1222;
-            --ai-cyan: #22d3ee;
+            --ai-cyan: #1e3a8a;
             --ai-purple: #8b5cf6;
             --ai-sky: #e0f2fe;
             --ai-mist: #f1f5f9;
@@ -64,7 +64,7 @@
             @foreach ($posMenu as $item)
                 @if (isset($item['route']))
                     <a href="{{ route($item['route']) }}"
-                       class="flex items-center gap-3 px-5 py-2.5 {{ request()->routeIs(str_replace('.index', '.*', $item['route'])) || request()->routeIs($item['route']) ? 'bg-white/10 text-white border-r-2 border-ai-cyan' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                       class="flex items-center gap-3 px-5 py-2.5 {{ request()->routeIs(str_replace('.index', '.*', $item['route'])) || request()->routeIs($item['route']) ? 'bg-white/10 text-white border-r-2 border-blue-500' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                         @include('partials.menu-icon', ['icon' => $item['icon']])
                         <span>{{ strtoupper($item['label']) }}</span>
                     </a>
@@ -85,7 +85,7 @@
                         <div x-show="open" x-cloak class="pb-1">
                             @foreach ($item['children'] as $child)
                                 <a href="{{ route($child['route']) }}"
-                                   class="block pl-14 pr-5 py-2 {{ request()->routeIs($child['route']) || request()->routeIs(str_replace('.index', '.*', $child['route'])) ? 'text-ai-cyan' : 'text-slate-500 hover:text-white' }}">
+                                   class="block pl-14 pr-5 py-2 {{ request()->routeIs($child['route']) || request()->routeIs(str_replace('.index', '.*', $child['route'])) ? 'text-blue-400' : 'text-slate-500 hover:text-white' }}">
                                     {{ strtoupper($child['label']) }}
                                 </a>
                             @endforeach
@@ -102,7 +102,7 @@
         <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
             <div class="flex items-center gap-2">
                 <a href="{{ route('purchases.create') }}" class="px-3 py-1.5 rounded-full bg-ai-purple hover:bg-violet-500 text-white text-xs font-medium">Create Purchase</a>
-                <a href="{{ route('transactions.create') }}" class="px-3 py-1.5 rounded-full bg-ai-cyan hover:bg-cyan-300 text-ai-navy text-xs font-medium">Create Transaction</a>
+                <a href="{{ route('transactions.create') }}" class="px-3 py-1.5 rounded-full bg-ai-cyan hover:bg-blue-950 text-white text-xs font-medium">Create Transaction</a>
                 <a href="{{ route('pos.index') }}" class="px-3 py-1.5 rounded-full bg-ai-navy hover:bg-slate-800 text-white text-xs font-medium inline-flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                     POS
