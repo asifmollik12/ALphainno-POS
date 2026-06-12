@@ -48,6 +48,6 @@ class SsoLoginController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        return redirect()->route('pos.index');
+        return redirect()->route('dashboard.index');
     }
 }
