@@ -13,15 +13,6 @@ return new class extends Migration
             $table->unsignedInteger('min_stock')->default(5)->after('stock');
         });
 
-        Schema::table('sales', function (Blueprint $table) {
-            $table->foreignId('customer_id')->nullable()->after('user_id')->constrained()->nullOnDelete();
-            $table->decimal('paid_amount', 12, 2)->default(0)->after('total');
-            $table->decimal('due_amount', 12, 2)->default(0)->after('paid_amount');
-            $table->decimal('returned_amount', 12, 2)->default(0)->after('due_amount');
-            $table->string('payment_status', 20)->default('paid')->after('returned_amount');
-            $table->date('sale_date')->nullable()->after('payment_status');
-        });
-
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -42,6 +33,15 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->decimal('balance_due', 12, 2)->default(0);
             $table->timestamps();
+        });
+
+        Schema::table('sales', function (Blueprint $table) {
+            $table->foreignId('customer_id')->nullable()->after('user_id')->constrained()->nullOnDelete();
+            $table->decimal('paid_amount', 12, 2)->default(0)->after('total');
+            $table->decimal('due_amount', 12, 2)->default(0)->after('paid_amount');
+            $table->decimal('returned_amount', 12, 2)->default(0)->after('due_amount');
+            $table->string('payment_status', 20)->default('paid')->after('returned_amount');
+            $table->date('sale_date')->nullable()->after('payment_status');
         });
 
         Schema::create('purchases', function (Blueprint $table) {
