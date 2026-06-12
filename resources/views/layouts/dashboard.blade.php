@@ -150,6 +150,7 @@
             currency: purchasePayCurrency,
             get actionUrl() { return purchasePayUrlPattern.replace('__ID__', this.purchaseId); },
             get dueText() { return this.currency + Number(this.due).toFixed(2); },
+            get dueNumber() { return Number(this.due).toFixed(2); },
             get totalPaid() {
                 return this.payments.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
             },
@@ -158,11 +159,14 @@
                 return row?.method || 'cash';
             },
             openPay(detail) {
-                if (!detail?.id) return;
+                const due = Number(detail?.due) || 0;
+                if (!detail?.id || due <= 0) {
+                    return;
+                }
                 this.purchaseId = detail.id;
-                this.due = Number(detail.due) || 0;
+                this.due = due;
                 this.invoiceRef = detail.ref || '';
-                this.payments = [{ amount: this.due, method: '' }];
+                this.payments = [{ amount: due, method: 'cash' }];
                 this.show = true;
             },
             setFullPaid() {
@@ -197,6 +201,10 @@
     }
 
     window.openPurchasePayModal = function (detail) {
+        const due = Number(detail?.due) || 0;
+        if (!detail?.id || due <= 0) {
+            return;
+        }
         window.dispatchEvent(new CustomEvent('open-pay', { detail, bubbles: true }));
     };
 
@@ -213,6 +221,10 @@
                 this.open = false;
             },
             openPayModal(detail) {
+                const due = Number(detail?.due) || 0;
+                if (due <= 0) {
+                    return;
+                }
                 this.close();
                 if (typeof window.openPurchasePayModal === 'function') {
                     window.openPurchasePayModal(detail);

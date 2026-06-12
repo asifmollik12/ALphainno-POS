@@ -11,7 +11,7 @@
             </div>
             <form :action="actionUrl" method="POST" class="p-5 space-y-4" @submit="syncPaidAmount">
                 @csrf
-                <p class="text-center text-sm">Due Amount : <span class="font-bold text-red-600 text-base" x-text="dueText"></span></p>
+                <p class="text-center text-sm mb-2">Due Amount : <span class="font-bold text-red-600 text-lg" x-text="dueNumber"></span></p>
 
                 <div>
                     <label class="text-sm font-medium text-slate-700">Date</label>
@@ -27,8 +27,7 @@
                         <div class="flex items-center gap-2 mb-2">
                             <input type="number" step="0.01" x-model.number="row.amount" min="0" required
                                    class="flex-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm">
-                            <select x-model="row.method" class="w-36 rounded-lg border border-slate-200 px-2 py-2.5 text-sm text-slate-600">
-                                <option value="">Select Pay...</option>
+                            <select x-model="row.method" required class="w-36 rounded-lg border border-slate-200 px-2 py-2.5 text-sm text-slate-600">
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
                                 <option value="mobile">Mobile Banking</option>
@@ -50,8 +49,7 @@
                     <input type="text" name="payment_reference" x-model="invoiceRef" class="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm">
                 </div>
 
-                <button type="submit" :disabled="due <= 0" class="w-full py-3 rounded-lg bg-ai-navy hover:bg-slate-900 text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed">Pay Now</button>
-                <p x-show="due <= 0" class="text-center text-xs text-slate-500">This invoice is already fully paid.</p>
+                <button type="submit" class="w-full py-3 rounded-lg bg-ai-navy hover:bg-slate-900 text-white font-semibold text-sm">Pay Now</button>
             </form>
         </div>
     </div>
