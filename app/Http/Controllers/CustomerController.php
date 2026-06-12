@@ -31,10 +31,23 @@ class CustomerController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'mobile' => ['nullable', 'string', 'max:50'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255'],
+            'tax_number' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string'],
+            'billing_country' => ['nullable', 'string', 'max:100'],
+            'billing_city' => ['nullable', 'string', 'max:100'],
+            'shipping_address' => ['nullable', 'string'],
+            'shipping_country' => ['nullable', 'string', 'max:100'],
+            'shipping_city' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $request->user()->customers()->create($data);
+        $customer = $request->user()->customers()->create($data);
+
+        if ($request->wantsJson()) {
+            return response()->json(['id' => $customer->id, 'name' => $customer->name]);
+        }
 
         return redirect()->route('customers.index')->with('success', 'Customer added.');
     }

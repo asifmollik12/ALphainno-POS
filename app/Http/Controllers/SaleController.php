@@ -25,4 +25,13 @@ class SaleController extends Controller
 
         return view('sales.show', compact('sale'));
     }
+
+    public function invoice(Sale $sale)
+    {
+        abort_unless($sale->user_id === auth()->id(), 403);
+        $sale->load(['items', 'customer']);
+        $setting = auth()->user()->shopSetting;
+
+        return view('sales.invoice', compact('sale', 'setting'));
+    }
 }

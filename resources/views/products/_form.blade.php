@@ -11,6 +11,22 @@
             <input name="sku" value="{{ old('sku', $product?->sku) }}" class="w-full rounded-lg border-slate-300">
         </div>
         <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Barcode</label>
+            <input name="barcode" value="{{ old('barcode', $product?->barcode) }}" class="w-full rounded-lg border-slate-300">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <input name="category" value="{{ old('category', $product?->category) }}" class="w-full rounded-lg border-slate-300">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Brand</label>
+            <input name="brand" value="{{ old('brand', $product?->brand) }}" class="w-full rounded-lg border-slate-300">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Unit</label>
+            <input name="unit" value="{{ old('unit', $product?->unit ?? 'Pcs') }}" class="w-full rounded-lg border-slate-300">
+        </div>
+        <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Cost price</label>
             <input type="number" step="0.01" name="cost_price" value="{{ old('cost_price', $product?->cost_price ?? 0) }}" class="w-full rounded-lg border-slate-300">
         </div>

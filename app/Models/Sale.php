@@ -12,10 +12,17 @@ class Sale extends Model
         'user_id',
         'customer_id',
         'total',
+        'subtotal',
+        'tax_amount',
+        'discount_amount',
         'paid_amount',
         'due_amount',
         'returned_amount',
         'payment_status',
+        'payment_method',
+        'warehouse',
+        'delivery_status',
+        'payment_reference',
         'sale_date',
         'reference',
     ];
@@ -24,6 +31,9 @@ class Sale extends Model
     {
         return [
             'total' => 'decimal:2',
+            'subtotal' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'due_amount' => 'decimal:2',
             'returned_amount' => 'decimal:2',

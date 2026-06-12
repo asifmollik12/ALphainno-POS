@@ -1,14 +1,309 @@
 @extends('layouts.dashboard')
+
 @section('title', 'POS')
+
+@php
+    $currency = $setting->currency ?? '৳';
+    $warehouse = $setting->warehouse_name ?? 'Main Warehouse';
+    $taxRate = (float) ($setting->default_tax_rate ?? 0);
+@endphp
+
 @section('content')
-@include('partials.page-header', ['title' => 'Point of Sale', 'subtitle' => 'Tap products to sell'])
-@if($products->isEmpty())
-<div class="text-center py-16 bg-white rounded-xl border text-slate-400">No products in stock. <a href="{{ route('products.create') }}" class="text-violet-600">Add products</a></div>
-@else
-<div class="grid lg:grid-cols-3 gap-6">
-<div class="lg:col-span-2"><input id="search" placeholder="Search..." class="w-full mb-3 rounded-lg border-slate-300"><div class="grid sm:grid-cols-2 gap-3 max-h-[65vh] overflow-y-auto">@foreach($products as $product)<button type="button" class="product-card text-left bg-white border rounded-xl p-4 hover:border-violet-500" data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $product->price }}" data-stock="{{ $product->stock }}"><div class="font-medium">{{ $product->name }}</div><div class="flex justify-between mt-2 text-sm"><span class="text-violet-600 font-semibold">{{ number_format($product->price,2) }}</span><span class="text-slate-400">Stock: {{ $product->stock }}</span></div></button>@endforeach</div></div>
-<div class="bg-white border rounded-xl p-4 flex flex-col min-h-[400px] shadow-sm"><h3 class="font-semibold mb-3">Cart</h3><div id="cart-empty" class="flex-1 flex items-center justify-center text-slate-400 text-sm">Empty</div><ul id="cart-items" class="flex-1 space-y-2 hidden"></ul><div id="cart-footer" class="border-t pt-4 mt-4 hidden"><div class="flex justify-between text-lg font-bold mb-4"><span>Total</span><span id="cart-total">0.00</span></div><form method="POST" action="{{ route('pos.checkout') }}">@csrf<div id="checkout-fields"></div><input type="hidden" name="paid_amount" id="paid-amount"><button class="w-full py-3 bg-violet-600 text-white rounded-lg font-medium">Complete sale</button></form></div></div>
+<div class="-m-6 flex flex-col lg:flex-row min-h-[calc(100vh-4rem)] bg-slate-100">
+    {{-- Left: Product picker --}}
+    <div class="lg:w-[42%] xl:w-[38%] bg-slate-200/80 border-r border-slate-300 p-4 flex flex-col">
+        <div class="bg-white rounded-lg border border-slate-200 p-3 shadow-sm mb-3">
+            <div class="flex gap-0 mb-3">
+                <button type="button" id="tab-category" class="filter-tab flex-1 py-2 text-sm font-semibold rounded-l-md bg-blue-600 text-white">Category</button>
+                <button type="button" id="tab-brand" class="filter-tab flex-1 py-2 text-sm font-semibold rounded-r-md bg-emerald-800 text-white opacity-80">Brand</button>
+            </div>
+            <input type="text" id="search-name" placeholder="Search By Name" class="w-full mb-2 rounded border-slate-300 text-sm py-2">
+            <input type="text" id="scan-barcode" placeholder="Scan Barcode" class="w-full rounded border-2 border-blue-500 text-sm py-2 focus:ring-blue-500">
+        </div>
+
+        <div id="filter-chips" class="flex flex-wrap gap-2 mb-3 min-h-[28px]"></div>
+
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto flex-1 pr-1">
+            @foreach ($products as $product)
+            <button type="button"
+                    class="product-card bg-white border border-slate-200 rounded-lg overflow-hidden text-left hover:shadow-md hover:border-blue-400 transition"
+                    data-id="{{ $product->id }}"
+                    data-name="{{ $product->name }}"
+                    data-price="{{ $product->price }}"
+                    data-stock="{{ $product->stock }}"
+                    data-unit="{{ $product->unit ?? 'Pcs' }}"
+                    data-category="{{ $product->category ?? '' }}"
+                    data-brand="{{ $product->brand ?? '' }}"
+                    data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}">
+                <div class="px-2 py-1.5 text-[11px] font-medium text-slate-700 line-clamp-2 min-h-[2.5rem]">{{ $product->name }}</div>
+                <div class="h-20 bg-slate-100 flex items-center justify-center text-slate-400">
+                    <span class="text-2xl font-bold opacity-30">{{ strtoupper(substr($product->name, 0, 1)) }}</span>
+                </div>
+            </button>
+            @endforeach
+        </div>
+        @if ($products->isEmpty())
+            <p class="text-center text-slate-500 py-8">No products in stock. <a href="{{ route('products.create') }}" class="text-blue-600 underline">Add products</a></p>
+        @endif
+    </div>
+
+    {{-- Right: Checkout --}}
+    <div class="flex-1 flex flex-col bg-white">
+        <form method="POST" action="{{ route('pos.checkout') }}" id="checkout-form" class="flex flex-col flex-1">
+            @csrf
+            <div class="grid md:grid-cols-3 gap-0 border-b border-slate-200">
+                <div class="p-3 border-b md:border-b-0 md:border-r border-slate-200">
+                    <label class="text-xs font-semibold text-red-600">Customer Name *</label>
+                    <div class="flex gap-1 mt-1">
+                        <select name="customer_id" id="customer-select" class="flex-1 rounded border-slate-300 text-sm py-1.5">
+                            <option value="">Walk-in customer</option>
+                            @foreach ($customers as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" id="open-customer-modal" class="w-9 h-9 rounded bg-blue-600 text-white text-lg leading-none">+</button>
+                    </div>
+                </div>
+                <div class="p-3 border-b md:border-b-0 md:border-r border-slate-200">
+                    <label class="text-xs font-semibold text-red-600">Warehouse *</label>
+                    <select name="warehouse" class="w-full mt-1 rounded border-slate-300 text-sm py-1.5">
+                        <option value="{{ $warehouse }}">{{ $warehouse }}</option>
+                    </select>
+                </div>
+                <div class="p-3">
+                    <label class="text-xs font-semibold text-red-600">Delivery Status *</label>
+                    <select name="delivery_status" class="w-full mt-1 rounded border-slate-300 text-sm py-1.5">
+                        <option value="delivered">Delivered</option>
+                        <option value="pending">Pending</option>
+                        <option value="shipped">Shipped</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-700 text-white sticky top-0">
+                        <tr>
+                            <th class="px-3 py-2 text-left font-medium">Product</th>
+                            <th class="px-3 py-2 text-left font-medium">Unit</th>
+                            <th class="px-3 py-2 text-right font-medium">Price</th>
+                            <th class="px-3 py-2 text-center font-medium w-24">Quantity</th>
+                            <th class="px-3 py-2 text-right font-medium">Total</th>
+                            <th class="px-3 py-2 w-8"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-body">
+                        <tr id="cart-empty-row"><td colspan="6" class="py-16 text-center text-slate-400">Select products from the left panel</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-t border-slate-200 p-4 bg-slate-50">
+                <div class="flex flex-wrap gap-6 justify-end mb-4 text-sm">
+                    <div class="text-right"><div class="text-slate-500">Sub Total (Before Discount)</div><div class="font-semibold" id="subtotal">{{ $currency }}0.00</div></div>
+                    <div class="text-right"><div class="text-slate-500">Total Tax</div><div class="font-semibold text-red-600" id="total-tax">{{ $currency }}0.00</div></div>
+                    <div class="text-right"><div class="text-slate-500">Total Discount</div><div class="font-semibold text-red-600" id="total-discount">{{ $currency }}0.00</div></div>
+                    <div class="text-right"><div class="text-slate-500 font-semibold">Grand Total</div><div class="text-xl font-bold" id="grand-total">{{ $currency }}0.00</div></div>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-3 items-end">
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Payment Method</label>
+                        <select name="payment_method" class="w-full mt-1 rounded border-slate-300 text-sm">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="mobile">Mobile Banking</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Reference Number</label>
+                        <input type="text" name="payment_reference" class="w-full mt-1 rounded border-slate-300 text-sm" placeholder="Optional">
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="hidden" name="paid_amount" id="paid-amount" value="0">
+                        <input type="hidden" name="order_discount" id="order-discount" value="0">
+                        <div id="checkout-fields"></div>
+                        <button type="submit" id="pay-btn" disabled class="flex-1 py-2.5 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-semibold flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/></svg>
+                            Pay
+                        </button>
+                        <button type="button" id="cancel-btn" class="px-5 py-2.5 rounded bg-red-700 hover:bg-red-600 text-white font-semibold">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
-@push('scripts')<script>(()=>{const cart=new Map();const render=()=>{const items=document.getElementById('cart-items'),empty=document.getElementById('cart-empty'),footer=document.getElementById('cart-footer'),fields=document.getElementById('checkout-fields'),totalEl=document.getElementById('cart-total'),paid=document.getElementById('paid-amount');if(cart.size===0){items.classList.add('hidden');empty.classList.remove('hidden');footer.classList.add('hidden');fields.innerHTML='';return;}empty.classList.add('hidden');items.classList.remove('hidden');footer.classList.remove('hidden');let total=0,i=0;items.innerHTML='';fields.innerHTML='';cart.forEach(item=>{const sub=item.price*item.qty;total+=sub;items.innerHTML+=`<li class="flex justify-between bg-slate-50 rounded p-2 text-sm"><span>${item.name} x${item.qty}</span><span>${sub.toFixed(2)}</span></li>`;fields.innerHTML+=`<input type="hidden" name="items[${i}][product_id]" value="${item.id}"><input type="hidden" name="items[${i}][quantity]" value="${item.qty}">`;i++;});totalEl.textContent=total.toFixed(2);paid.value=total.toFixed(2);};document.querySelectorAll('.product-card').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.id,stock=+btn.dataset.stock,qty=(cart.get(id)?.qty||0)+1;if(qty>stock)return alert('Not enough stock');cart.set(id,{id,name:btn.dataset.name,price:+btn.dataset.price,qty});render();});document.getElementById('search')?.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.product-card').forEach(el=>el.classList.toggle('hidden',q&&!el.dataset.name.toLowerCase().includes(q)));});})();</script>@endpush
-@endif
+
+{{-- Manage Customer Modal --}}
+<div id="customer-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" id="modal-backdrop"></div>
+    <div class="absolute inset-4 md:inset-auto md:top-8 md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between px-5 py-4 border-b">
+            <h3 class="text-lg font-semibold text-blue-700">Manage Customer</h3>
+            <button type="button" id="close-customer-modal" class="w-8 h-8 rounded-full bg-red-600 text-white">×</button>
+        </div>
+        <form id="customer-form" class="p-5 grid md:grid-cols-2 gap-4 text-sm">
+            @csrf
+            <div><label class="text-red-600 font-medium">Customer Name *</label><input name="name" required class="w-full mt-1 rounded border-slate-300"></div>
+            <div><label class="font-medium">Contact Person</label><input name="contact_person" class="w-full mt-1 rounded border-slate-300"></div>
+            <div><label class="font-medium">Email</label><input type="email" name="email" class="w-full mt-1 rounded border-slate-300"></div>
+            <div><label class="font-medium">Website</label><input name="website" class="w-full mt-1 rounded border-slate-300"></div>
+            <div><label class="text-red-600 font-medium">Mobile Number *</label><input name="mobile" required class="w-full mt-1 rounded border-slate-300"></div>
+            <div><label class="font-medium">Phone Number</label><input name="phone" class="w-full mt-1 rounded border-slate-300"></div>
+            <div><label class="font-medium">Tax Number</label><input name="tax_number" class="w-full mt-1 rounded border-slate-300"></div>
+            <div class="md:col-span-2 border-t pt-3 font-semibold text-slate-700">Billing Address</div>
+            <div class="md:col-span-2"><label class="text-red-600 font-medium">Address *</label><textarea name="address" rows="2" required class="w-full mt-1 rounded border-slate-300"></textarea></div>
+            <div><label class="text-red-600 font-medium">Country *</label><input name="billing_country" required class="w-full mt-1 rounded border-slate-300" value="Bangladesh"></div>
+            <div><label class="text-red-600 font-medium">City *</label><input name="billing_city" required class="w-full mt-1 rounded border-slate-300"></div>
+            <div class="md:col-span-2 flex gap-3 pt-2">
+                <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium">Save</button>
+                <button type="button" id="cancel-customer-modal" class="px-6 py-2 bg-red-800 text-white rounded-lg">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const currency = @json($currency);
+    const taxRate = @json($taxRate);
+    const categories = @json($categories);
+    const brands = @json($brands);
+    const products = @json($products->map(fn ($p) => [
+        'id' => $p->id,
+        'name' => $p->name,
+        'price' => (float) $p->price,
+        'stock' => $p->stock,
+        'unit' => $p->unit ?? 'Pcs',
+        'category' => $p->category,
+        'brand' => $p->brand,
+        'barcode' => $p->barcode ?? $p->sku,
+    ]));
+
+    let filterMode = 'category';
+    let activeFilter = '';
+    const cart = new Map();
+
+    const fmt = n => currency + Number(n).toFixed(2);
+    const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+    function renderChips() {
+        const list = filterMode === 'category' ? categories : brands;
+        const el = document.getElementById('filter-chips');
+        el.innerHTML = '<button type="button" data-filter="" class="chip px-2 py-0.5 rounded text-xs ' + (!activeFilter ? 'bg-blue-600 text-white' : 'bg-white border') + '">All</button>';
+        list.forEach(v => {
+            el.innerHTML += `<button type="button" data-filter="${esc(v)}" class="chip px-2 py-0.5 rounded text-xs ${activeFilter===v?'bg-blue-600 text-white':'bg-white border'}">${esc(v)}</button>`;
+        });
+        el.querySelectorAll('.chip').forEach(btn => btn.onclick = () => { activeFilter = btn.dataset.filter; renderChips(); filterProducts(); });
+    }
+
+    function filterProducts() {
+        const q = document.getElementById('search-name').value.toLowerCase();
+        document.querySelectorAll('.product-card').forEach(card => {
+            const matchSearch = !q || card.dataset.name.toLowerCase().includes(q);
+            const val = filterMode === 'category' ? card.dataset.category : card.dataset.brand;
+            const matchFilter = !activeFilter || val === activeFilter;
+            card.classList.toggle('hidden', !(matchSearch && matchFilter));
+        });
+    }
+
+    function addProduct(id) {
+        const p = products.find(x => x.id == id);
+        if (!p) return;
+        const cur = cart.get(id) || { ...p, qty: 0, discount: 0 };
+        if (cur.qty >= p.stock) return alert('Not enough stock for ' + p.name);
+        cur.qty++;
+        cart.set(id, cur);
+        renderCart();
+    }
+
+    function renderCart() {
+        const body = document.getElementById('cart-body');
+        const fields = document.getElementById('checkout-fields');
+        const payBtn = document.getElementById('pay-btn');
+        fields.innerHTML = '';
+
+        if (cart.size === 0) {
+            body.innerHTML = '<tr id="cart-empty-row"><td colspan="6" class="py-16 text-center text-slate-400">Select products from the left panel</td></tr>';
+            ['subtotal','total-tax','total-discount','grand-total'].forEach(id => document.getElementById(id).textContent = fmt(0));
+            document.getElementById('paid-amount').value = 0;
+            payBtn.disabled = true;
+            return;
+        }
+
+        let subtotal = 0, totalTax = 0, totalDiscount = 0, i = 0;
+        body.innerHTML = '';
+
+        cart.forEach(item => {
+            const lineSub = item.price * item.qty;
+            const taxable = Math.max(lineSub - item.discount, 0);
+            const lineTax = taxable * (taxRate / 100);
+            const lineTotal = taxable + lineTax;
+            subtotal += lineSub;
+            totalDiscount += item.discount;
+            totalTax += lineTax;
+
+            body.innerHTML += `<tr class="border-b"><td class="px-3 py-2">${esc(item.name)}</td><td class="px-3 py-2">${esc(item.unit)}</td><td class="px-3 py-2 text-right">${fmt(item.price)}</td><td class="px-3 py-2 text-center"><input type="number" min="1" max="${item.stock}" value="${item.qty}" data-qty="${item.id}" class="w-16 text-center rounded border-slate-300 text-sm"></td><td class="px-3 py-2 text-right font-medium">${fmt(lineTotal)}</td><td class="px-3 py-2"><button type="button" data-remove="${item.id}" class="text-red-600">×</button></td></tr>`;
+
+            fields.innerHTML += `<input type="hidden" name="items[${i}][product_id]" value="${item.id}"><input type="hidden" name="items[${i}][quantity]" value="${item.qty}"><input type="hidden" name="items[${i}][discount]" value="${item.discount}">`;
+            i++;
+        });
+
+        const grand = subtotal - totalDiscount + totalTax;
+        document.getElementById('subtotal').textContent = fmt(subtotal);
+        document.getElementById('total-tax').textContent = fmt(totalTax);
+        document.getElementById('total-discount').textContent = fmt(totalDiscount);
+        document.getElementById('grand-total').textContent = fmt(grand);
+        document.getElementById('paid-amount').value = grand.toFixed(2);
+        payBtn.disabled = false;
+
+        body.querySelectorAll('[data-qty]').forEach(inp => inp.onchange = () => {
+            const item = cart.get(+inp.dataset.qty);
+            item.qty = Math.min(Math.max(+inp.value, 1), item.stock);
+            cart.set(+inp.dataset.qty, item);
+            renderCart();
+        });
+        body.querySelectorAll('[data-remove]').forEach(btn => btn.onclick = () => { cart.delete(+btn.dataset.remove); renderCart(); });
+    }
+
+    document.querySelectorAll('.product-card').forEach(c => c.onclick = () => addProduct(+c.dataset.id));
+    document.getElementById('search-name').oninput = filterProducts;
+    document.getElementById('scan-barcode').onkeydown = e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const code = e.target.value.trim().toLowerCase();
+        const p = products.find(x => (x.barcode||'').toLowerCase() === code || String(x.id) === code);
+        if (p) { addProduct(p.id); e.target.value = ''; }
+        else alert('Product not found');
+    };
+    document.getElementById('tab-category').onclick = () => { filterMode='category'; activeFilter=''; document.getElementById('tab-category').classList.replace('opacity-80',''); document.getElementById('tab-brand').classList.add('opacity-80'); renderChips(); filterProducts(); };
+    document.getElementById('tab-brand').onclick = () => { filterMode='brand'; activeFilter=''; document.getElementById('tab-brand').classList.remove('opacity-80'); document.getElementById('tab-category').classList.add('opacity-80'); renderChips(); filterProducts(); };
+    document.getElementById('cancel-btn').onclick = () => { cart.clear(); renderCart(); };
+    renderChips();
+
+    const modal = document.getElementById('customer-modal');
+    document.getElementById('open-customer-modal').onclick = () => modal.classList.remove('hidden');
+    ['close-customer-modal','cancel-customer-modal','modal-backdrop'].forEach(id => document.getElementById(id).onclick = () => modal.classList.add('hidden'));
+
+    document.getElementById('customer-form').onsubmit = async e => {
+        e.preventDefault();
+        const form = e.target;
+        const res = await fetch(@json(route('customers.store')), {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: new FormData(form),
+        });
+        if (!res.ok) return alert('Could not save customer');
+        const data = await res.json();
+        const sel = document.getElementById('customer-select');
+        sel.innerHTML += `<option value="${data.id}" selected>${esc(data.name)}</option>`;
+        modal.classList.add('hidden');
+        form.reset();
+    };
+})();
+</script>
+@endpush

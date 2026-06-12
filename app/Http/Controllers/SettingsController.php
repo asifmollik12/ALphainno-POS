@@ -21,7 +21,9 @@ class SettingsController extends Controller
     {
         $data = $request->validate([
             'company_name' => ['nullable', 'string', 'max:255'],
+            'warehouse_name' => ['nullable', 'string', 'max:255'],
             'currency' => ['nullable', 'string', 'max:10'],
+            'default_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email'],
             'address' => ['nullable', 'string'],

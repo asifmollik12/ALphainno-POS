@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index', 'create', 'store']);
 
     Route::resource('sales', SaleController::class)->only(['index', 'show']);
+    Route::get('/sales/{sale}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
     Route::resource('customers', CustomerController::class)->except(['show']);
     Route::resource('sale-returns', SaleReturnController::class)->only(['index', 'create', 'store']);
 
