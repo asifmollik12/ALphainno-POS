@@ -1,32 +1,16 @@
 <?php return array (
-  'barryvdh/laravel-dompdf' => 
+  'laravel/pail' => 
   array (
-    'aliases' => 
-    array (
-      'PDF' => 'Barryvdh\\DomPDF\\Facade\\Pdf',
-      'Pdf' => 'Barryvdh\\DomPDF\\Facade\\Pdf',
-    ),
     'providers' => 
     array (
-      0 => 'Barryvdh\\DomPDF\\ServiceProvider',
+      0 => 'Laravel\\Pail\\PailServiceProvider',
     ),
   ),
-  'intervention/image' => 
+  'laravel/pao' => 
   array (
     'providers' => 
     array (
-      0 => 'Intervention\\Image\\ImageServiceProvider',
-    ),
-    'aliases' => 
-    array (
-      'Image' => 'Intervention\\Image\\Facades\\Image',
-    ),
-  ),
-  'laravel/passport' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Passport\\PassportServiceProvider',
+      0 => 'Laravel\\Pao\\Laravel\\ServiceProvider',
     ),
   ),
   'laravel/tinker' => 
@@ -34,28 +18,6 @@
     'providers' => 
     array (
       0 => 'Laravel\\Tinker\\TinkerServiceProvider',
-    ),
-  ),
-  'maatwebsite/excel' => 
-  array (
-    'aliases' => 
-    array (
-      'Excel' => 'Maatwebsite\\Excel\\Facades\\Excel',
-    ),
-    'providers' => 
-    array (
-      0 => 'Maatwebsite\\Excel\\ExcelServiceProvider',
-    ),
-  ),
-  'macellan/laravel-zip' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Macellan\\Zip\\ZipServiceProvider',
-    ),
-    'aliases' => 
-    array (
-      'Zip' => 'Macellan\\Zip\\ZipFacade',
     ),
   ),
   'nesbot/carbon' => 
@@ -77,39 +39,6 @@
     'providers' => 
     array (
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    ),
-  ),
-  'nwidart/laravel-modules' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Nwidart\\Modules\\LaravelModulesServiceProvider',
-    ),
-    'aliases' => 
-    array (
-      'Module' => 'Nwidart\\Modules\\Facades\\Module',
-    ),
-  ),
-  'spatie/laravel-ignition' => 
-  array (
-    'aliases' => 
-    array (
-      'Flare' => 'Spatie\\LaravelIgnition\\Facades\\Flare',
-    ),
-    'providers' => 
-    array (
-      0 => 'Spatie\\LaravelIgnition\\IgnitionServiceProvider',
-    ),
-  ),
-  'yajra/laravel-datatables-oracle' => 
-  array (
-    'aliases' => 
-    array (
-      'DataTables' => 'Yajra\\DataTables\\Facades\\DataTables',
-    ),
-    'providers' => 
-    array (
-      0 => 'Yajra\\DataTables\\DataTablesServiceProvider',
     ),
   ),
 );
