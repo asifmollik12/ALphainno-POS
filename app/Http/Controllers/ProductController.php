@@ -110,12 +110,80 @@ class ProductController extends Controller
         return view('products.show', compact('product', 'currency'));
     }
 
+    public function printBarcode(Request $request)
+    {
+        $userId = $request->user()->id;
+        $settings = $this->barcodeSettings($request);
+        $selectedIds = $this->barcodeProductIds($request);
+
+        $selectedProducts = $selectedIds
+            ? Product::where('user_id', $userId)->whereIn('id', $selectedIds)->orderBy('name')->get()
+            : collect();
+
+        return view('products.print-barcode', compact('settings', 'selectedProducts', 'selectedIds'));
+    }
+
+    public function printBarcodePreview(Request $request)
+    {
+        $userId = $request->user()->id;
+        $settings = $this->barcodeSettings($request);
+        $selectedIds = $this->barcodeProductIds($request);
+
+        $products = $selectedIds
+            ? Product::where('user_id', $userId)->whereIn('id', $selectedIds)->orderBy('name')->get()
+            : Product::where('user_id', $userId)->orderBy('name')->get();
+
+        if ($products->isEmpty()) {
+            abort(404, 'No products selected for barcode printing.');
+        }
+
+        $slots = max($settings['columns'] * $settings['rows'], 1);
+        $labels = collect();
+        for ($i = 0; $i < $slots; $i++) {
+            $labels->push($products[$i % $products->count()]);
+        }
+
+        $currency = $request->user()->shopSetting?->currency ?? '৳';
+        $autoPrint = $request->boolean('print');
+
+        return view('products.print-barcode-sheet', compact('labels', 'settings', 'currency', 'autoPrint'));
+    }
+
     public function barcode(Product $product, Request $request)
     {
         $this->authorizeProduct($product);
-        $currency = $request->user()->shopSetting?->currency ?? '৳';
 
-        return view('products.barcode', compact('product', 'currency'));
+        return redirect()->route('products.print-barcode', [
+            'product' => $product->id,
+            ...$this->barcodeSettings($request),
+        ]);
+    }
+
+    /** @return array{page_size:string,columns:int,rows:int,height:int,width:float,font_size:int} */
+    private function barcodeSettings(Request $request): array
+    {
+        return [
+            'page_size' => $request->input('page_size', 'A4'),
+            'columns' => max((int) $request->input('columns', 3), 1),
+            'rows' => max((int) $request->input('rows', 10), 1),
+            'height' => max((int) $request->input('height', 60), 20),
+            'width' => max((float) $request->input('width', 1.5), 0.5),
+            'font_size' => max((int) $request->input('font_size', 15), 8),
+        ];
+    }
+
+    /** @return list<int> */
+    private function barcodeProductIds(Request $request): array
+    {
+        $ids = $request->input('products', []);
+        if (! is_array($ids)) {
+            $ids = [$ids];
+        }
+        if ($request->filled('product')) {
+            $ids[] = $request->input('product');
+        }
+
+        return array_values(array_unique(array_filter(array_map('intval', $ids))));
     }
 
     public function edit(Product $product)

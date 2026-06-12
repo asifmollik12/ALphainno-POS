@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('products/print', [ProductController::class, 'print'])->name('products.print');
     Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
+    Route::get('products/print-barcode/preview', [ProductController::class, 'printBarcodePreview'])->name('products.print-barcode.preview');
+    Route::get('products/print-barcode', [ProductController::class, 'printBarcode'])->name('products.print-barcode');
     Route::get('products/{product}/barcode', [ProductController::class, 'barcode'])->name('products.barcode');
     Route::resource('products', ProductController::class);
     Route::get('/inventory/shortage', [InventoryController::class, 'shortage'])->name('inventory.shortage');
