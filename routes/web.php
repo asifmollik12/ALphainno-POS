@@ -39,6 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
     Route::resource('products', ProductController::class)->except(['show']);
     Route::get('/inventory/shortage', [InventoryController::class, 'shortage'])->name('inventory.shortage');
+    Route::get('/inventory/shortage/print', [InventoryController::class, 'shortagePrint'])->name('inventory.shortage.print');
+    Route::get('/inventory/shortage/export', [InventoryController::class, 'shortageExport'])->name('inventory.shortage.export');
 
     Route::resource('purchases', PurchaseController::class)->only(['index', 'create', 'store', 'show']);
     Route::resource('suppliers', SupplierController::class)->except(['show']);
