@@ -187,16 +187,7 @@
     const taxRate = @json($taxRate);
     const categories = @json($categories);
     const brands = @json($brands);
-    const products = @json($products->map(fn ($p) => [
-        'id' => $p->id,
-        'name' => $p->name,
-        'price' => (float) $p->price,
-        'stock' => $p->stock,
-        'unit' => $p->unit ?? 'Pcs',
-        'category' => $p->category,
-        'brand' => $p->brand,
-        'barcode' => $p->barcode ?? $p->sku,
-    ]));
+    const products = @json($productCatalog);
 
     let filterMode = 'category';
     let activeFilter = '';

@@ -29,7 +29,18 @@ class PosController extends Controller
         $categories = Product::where('user_id', $userId)->whereNotNull('category')->distinct()->pluck('category')->filter()->sort()->values();
         $brands = Product::where('user_id', $userId)->whereNotNull('brand')->distinct()->pluck('brand')->filter()->sort()->values();
 
-        return view('pos.index', compact('products', 'customers', 'categories', 'brands', 'setting'));
+        $productCatalog = $products->map(fn ($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'price' => (float) $p->price,
+            'stock' => $p->stock,
+            'unit' => $p->unit ?? 'Pcs',
+            'category' => $p->category,
+            'brand' => $p->brand,
+            'barcode' => $p->barcode ?? $p->sku,
+        ])->values();
+
+        return view('pos.index', compact('products', 'customers', 'categories', 'brands', 'setting', 'productCatalog'));
     }
 
     public function checkout(Request $request)
