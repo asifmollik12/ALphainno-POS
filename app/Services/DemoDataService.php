@@ -52,6 +52,69 @@ class DemoDataService
         });
     }
 
+    /** Add demo shortage products and mark some existing stock as low. */
+    public function seedShortage(User $user): array
+    {
+        $this->bootstrap->ensureDefaults($user);
+
+        $catalog = [
+            ['name' => 'Marker Black', 'sku' => 'SHR-001', 'category' => 'Stationery', 'brand' => 'Matador', 'barcode' => '8801002001001', 'cost' => 25, 'price' => 40, 'stock' => 0, 'min' => 10],
+            ['name' => 'Field Notebook A5', 'sku' => 'SHR-002', 'category' => 'Stationery', 'brand' => 'Olympic', 'barcode' => '8801002001002', 'cost' => 45, 'price' => 65, 'stock' => 0, 'min' => 8],
+            ['name' => 'Whiteboard Marker Blue', 'sku' => 'SHR-003', 'category' => 'Stationery', 'brand' => 'Deli', 'barcode' => '8801002001003', 'cost' => 35, 'price' => 55, 'stock' => 0, 'min' => 6],
+            ['name' => 'Glue Stick 21g', 'sku' => 'SHR-004', 'category' => 'Stationery', 'brand' => 'Faber-Castell', 'barcode' => '8801002001004', 'cost' => 30, 'price' => 50, 'stock' => 0, 'min' => 12],
+            ['name' => 'Eraser Large', 'sku' => 'SHR-005', 'category' => 'Stationery', 'brand' => 'Dollar', 'barcode' => '8801002001005', 'cost' => 8, 'price' => 15, 'stock' => 0, 'min' => 20],
+            ['name' => 'Highlighter Yellow', 'sku' => 'SHR-006', 'category' => 'Stationery', 'brand' => 'Stabilo', 'barcode' => '8801002001006', 'cost' => 40, 'price' => 60, 'stock' => 0, 'min' => 5],
+            ['name' => 'Graph Paper Pad', 'sku' => 'SHR-007', 'category' => 'Stationery', 'brand' => 'Matador', 'barcode' => '8801002001007', 'cost' => 50, 'price' => 75, 'stock' => 0, 'min' => 7],
+            ['name' => 'Correction Pen', 'sku' => 'SHR-008', 'category' => 'Stationery', 'brand' => 'Tipp-Ex', 'barcode' => '8801002001008', 'cost' => 55, 'price' => 85, 'stock' => 0, 'min' => 4],
+            ['name' => 'Sticky Notes 3x3', 'sku' => 'SHR-009', 'category' => 'Stationery', 'brand' => 'Post-it', 'barcode' => '8801002001009', 'cost' => 65, 'price' => 95, 'stock' => 0, 'min' => 9],
+            ['name' => 'Ruler 30cm', 'sku' => 'SHR-010', 'category' => 'Stationery', 'brand' => 'Deli', 'barcode' => '8801002001010', 'cost' => 15, 'price' => 25, 'stock' => 0, 'min' => 15],
+        ];
+
+        $created = 0;
+        $updated = 0;
+
+        foreach ($catalog as $row) {
+            $exists = Product::where('user_id', $user->id)->where('sku', $row['sku'])->first();
+            if ($exists) {
+                $exists->update(['stock' => $row['stock'], 'min_stock' => $row['min']]);
+                $updated++;
+
+                continue;
+            }
+
+            Product::create([
+                'user_id' => $user->id,
+                'name' => $row['name'],
+                'sku' => $row['sku'],
+                'category' => $row['category'],
+                'brand' => $row['brand'],
+                'unit' => 'Pcs',
+                'barcode' => $row['barcode'],
+                'cost_price' => $row['cost'],
+                'price' => $row['price'],
+                'stock' => $row['stock'],
+                'min_stock' => $row['min'],
+            ]);
+            $created++;
+        }
+
+        // Mark a few in-stock products as shortage for variety
+        $inStock = Product::where('user_id', $user->id)
+            ->whereColumn('stock', '>', 'min_stock')
+            ->inRandomOrder()
+            ->limit(5)
+            ->get();
+
+        foreach ($inStock as $product) {
+            $product->update(['stock' => max(0, (int) floor($product->min_stock / 2))]);
+            $updated++;
+        }
+
+        $totalShort = Product::where('user_id', $user->id)->whereColumn('stock', '<=', 'min_stock')->count();
+
+        return compact('created', 'updated', 'totalShort');
+    }
+
     private function clearUserData(User $user): void
     {
         DB::table('sale_return_items')->whereIn('sale_return_id', function ($q) use ($user) {
