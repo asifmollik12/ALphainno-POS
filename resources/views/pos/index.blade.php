@@ -150,6 +150,8 @@
     </div>
 </div>
 
+<audio id="pos-add-sound" preload="auto" playsinline src="{{ asset('sounds/pos-add.wav') }}"></audio>
+
 {{-- Manage Customer Modal --}}
 <div id="customer-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/40" id="modal-backdrop"></div>
@@ -196,29 +198,40 @@
     const fmt = n => currency + Number(n).toFixed(2);
     const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    let audioCtx = null;
-    function playAddSound() {
-        try {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(920, now);
-            osc.frequency.setValueAtTime(1380, now + 0.05);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-            osc.start(now);
-            osc.stop(now + 0.12);
-        } catch (_) {}
+    const addSoundEl = document.getElementById('pos-add-sound');
+    let soundReady = false;
+
+    function unlockSound() {
+        if (soundReady || !addSoundEl) return;
+        addSoundEl.volume = 0.001;
+        const attempt = addSoundEl.play();
+        if (!attempt) {
+            soundReady = true;
+            return;
+        }
+        attempt.then(() => {
+            addSoundEl.pause();
+            addSoundEl.currentTime = 0;
+            addSoundEl.volume = 0.9;
+            soundReady = true;
+        }).catch(() => {});
     }
+
+    function playAddSound() {
+        if (!addSoundEl) return;
+        unlockSound();
+        const clip = addSoundEl.cloneNode(true);
+        clip.volume = 0.9;
+        clip.play().catch(() => {
+            addSoundEl.currentTime = 0;
+            addSoundEl.volume = 0.9;
+            addSoundEl.play().catch(() => {});
+        });
+    }
+
+    ['pointerdown', 'keydown'].forEach(evt => {
+        document.addEventListener(evt, unlockSound, { once: true, capture: true });
+    });
 
     function renderChips() {
         const list = filterMode === 'category' ? categories : brands;
@@ -247,6 +260,7 @@
         if (cur.qty >= p.stock) return alert('Not enough stock for ' + p.name);
         cur.qty++;
         cart.set(id, cur);
+        playAddSound();
         renderCart();
     }
 
@@ -299,7 +313,7 @@
         body.querySelectorAll('[data-remove]').forEach(btn => btn.onclick = () => { cart.delete(+btn.dataset.remove); renderCart(); });
     }
 
-    document.querySelectorAll('.product-card').forEach(c => c.onclick = () => addProduct(+c.dataset.id));
+    document.querySelectorAll('.product-card').forEach(c => c.onclick = () => { unlockSound(); addProduct(+c.dataset.id); });
     document.getElementById('search-name').oninput = filterProducts;
     document.getElementById('scan-barcode').onkeydown = e => {
         if (e.key !== 'Enter') return;
