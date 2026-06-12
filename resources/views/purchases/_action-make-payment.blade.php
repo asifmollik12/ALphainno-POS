@@ -7,7 +7,7 @@
         data-pay-ref="{{ $purchase->reference }}"
         data-pay-due="{{ $purchase->due_amount }}"
         @if ($hasDue)
-            @click="openPayModalFromButton($event.currentTarget)"
+            @click.stop="openPayModalFromButton($event.currentTarget)"
         @endif
         @disabled(! $hasDue)
         class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm {{ $hasDue ? 'hover:bg-slate-50 text-slate-700' : 'opacity-40 cursor-not-allowed text-slate-400' }}"

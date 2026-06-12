@@ -49,7 +49,11 @@ Route::middleware('auth')->group(function () {
     Route::get('purchases/export', [PurchaseController::class, 'export'])->name('purchases.export');
     Route::post('purchases/{purchase}/pay', [PurchaseController::class, 'pay'])->name('purchases.pay');
     Route::resource('purchases', PurchaseController::class)->only(['index', 'create', 'store', 'show']);
-    Route::resource('suppliers', SupplierController::class)->except(['show']);
+    Route::get('suppliers/print', [SupplierController::class, 'print'])->name('suppliers.print');
+    Route::get('suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');
+    Route::get('suppliers/demo-csv', [SupplierController::class, 'demoCsv'])->name('suppliers.demo-csv');
+    Route::post('suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
+    Route::resource('suppliers', SupplierController::class);
     Route::resource('purchase-returns', PurchaseReturnController::class)->only(['index', 'create', 'store']);
     Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index', 'create', 'store']);
 
