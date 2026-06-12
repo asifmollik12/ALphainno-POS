@@ -1,37 +1,8 @@
-@extends('layouts.app')
-
-@section('title', 'Sales History')
-
+@extends('layouts.dashboard')
+@section('title', 'Sale Invoices')
 @section('content')
-<div class="mb-6">
-    <h1 class="text-xl font-semibold text-white">Sales history</h1>
-    <p class="text-slate-400 text-sm mt-0.5">Recent completed sales</p>
-</div>
-
-@if ($sales->isEmpty())
-    <div class="text-center py-16 border border-dashed border-slate-700 rounded-xl">
-        <p class="text-slate-400">No sales yet.</p>
-    </div>
-@else
-    <div class="space-y-4">
-        @foreach ($sales as $sale)
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <div>
-                    <span class="font-medium text-white">{{ $sale->reference }}</span>
-                    <span class="text-slate-500 text-sm ml-2">{{ $sale->created_at->format('M d, Y h:i A') }}</span>
-                </div>
-                <span class="text-emerald-400 font-semibold">৳{{ number_format($sale->total, 2) }}</span>
-            </div>
-            <ul class="text-sm text-slate-400 space-y-1">
-                @foreach ($sale->items as $item)
-                <li>{{ $item->product_name }} — {{ $item->quantity }} × ৳{{ number_format($item->unit_price, 2) }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endforeach
-    </div>
-
-    <div class="mt-4">{{ $sales->links() }}</div>
-@endif
+@include('partials.page-header', ['title' => 'Sale Invoice', 'actionUrl' => route('pos.index'), 'actionLabel' => 'Open POS'])
+<div class="bg-white rounded-xl border overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-50 text-slate-500"><tr><th class="px-4 py-3 text-left">Reference</th><th class="px-4 py-3 text-left">Customer</th><th class="px-4 py-3 text-left">Date</th><th class="px-4 py-3 text-right">Total</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Due</th><th class="px-4 py-3 text-right">Status</th></tr></thead>
+<tbody>@forelse($sales as $s)<tr class="border-t hover:bg-slate-50"><td class="px-4 py-3"><a href="{{ route('sales.show',$s) }}" class="text-blue-600 font-medium">{{ $s->reference }}</a></td><td class="px-4 py-3">{{ $s->customer->name ?? 'Walk-in' }}</td><td class="px-4 py-3">{{ optional($s->sale_date)->format('M d, Y') ?? $s->created_at->format('M d, Y') }}</td><td class="px-4 py-3 text-right">{{ number_format($s->total,2) }}</td><td class="px-4 py-3 text-right">{{ number_format($s->paid_amount,2) }}</td><td class="px-4 py-3 text-right">{{ number_format($s->due_amount,2) }}</td><td class="px-4 py-3 text-right"><span class="text-xs px-2 py-0.5 bg-slate-100 rounded uppercase">{{ $s->payment_status }}</span></td></tr>@empty<tr><td colspan="7" class="py-12 text-center text-slate-400">No sales yet.</td></tr>@endforelse</tbody></table></div>
+<div class="mt-4">{{ $sales->links() }}</div>
 @endsection

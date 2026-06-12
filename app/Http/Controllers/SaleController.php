@@ -11,10 +11,18 @@ class SaleController extends Controller
     {
         $sales = Sale::query()
             ->where('user_id', $request->user()->id)
-            ->with('items')
+            ->with(['items', 'customer'])
             ->latest()
             ->paginate(20);
 
         return view('sales.index', compact('sales'));
+    }
+
+    public function show(Sale $sale)
+    {
+        abort_unless($sale->user_id === auth()->id(), 403);
+        $sale->load(['items', 'customer']);
+
+        return view('sales.show', compact('sale'));
     }
 }

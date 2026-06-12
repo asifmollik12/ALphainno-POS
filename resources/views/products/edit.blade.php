@@ -1,11 +1,6 @@
-@extends('layouts.app')
-
+@extends('layouts.dashboard')
 @section('title', 'Edit Product')
-
 @section('content')
-<div class="max-w-lg">
-    <h1 class="text-xl font-semibold text-white mb-6">Edit product</h1>
-
-    @include('products._form', ['product' => $product, 'action' => route('products.update', $product)])
-</div>
+@include('partials.page-header', ['title' => 'Edit Product'])
+@include('products._form', ['product' => $product, 'action' => route('products.update', $product)])
 @endsection

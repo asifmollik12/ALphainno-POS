@@ -45,7 +45,7 @@
             </div>
         @endif
 
-        @if ($errors->any())
+        @if (isset($errors) && $errors->any())
             <div class="mb-4 rounded-lg bg-red-900/40 border border-red-700 text-red-100 px-4 py-3 text-sm">
                 <ul class="list-disc list-inside space-y-1">
                     @foreach ($errors->all() as $error)
