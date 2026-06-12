@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceRootUrl($url);
         }
 
-        View::composer('layouts.dashboard', function ($view) {
+        View::composer(['layouts.dashboard', 'dashboard.*'], function ($view) {
             $view->with('posMenu', PosMenu::items());
             $view->with('shopSetting', auth()->user()?->shopSetting);
         });
