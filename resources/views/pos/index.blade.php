@@ -28,7 +28,8 @@
         <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto flex-1 pr-1 pb-2">
             @foreach ($products as $product)
             <button type="button"
-                    class="product-card group bg-white border border-ai-grey/80 rounded-md overflow-hidden text-left hover:shadow-lg hover:border-ai-cyan transition-all active:scale-[0.98]"
+                    @disabled($product->stock <= 0)
+                    class="product-card group bg-white border border-ai-grey/80 rounded-md overflow-hidden text-left transition-all {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}"
                     data-id="{{ $product->id }}"
                     data-name="{{ $product->name }}"
                     data-price="{{ $product->price }}"
@@ -36,8 +37,14 @@
                     data-unit="{{ $product->unit ?? 'Pcs' }}"
                     data-category="{{ $product->category ?? '' }}"
                     data-brand="{{ $product->brand ?? '' }}"
-                    data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}">
-                <div class="px-2 py-1.5 text-[11px] font-semibold text-slate-800 line-clamp-2 min-h-[2.25rem] leading-tight">{{ $product->name }}</div>
+                    data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}"
+                    data-out-of-stock="{{ $product->stock <= 0 ? '1' : '0' }}">
+                <div class="px-2 py-1.5 text-[11px] font-semibold text-slate-800 line-clamp-2 min-h-[2.25rem] leading-tight">
+                    {{ $product->name }}
+                    @if ($product->stock <= 0)
+                        <span class="block text-[10px] text-red-600 font-bold mt-0.5">Out of stock</span>
+                    @endif
+                </div>
                 <div class="h-[72px] bg-gradient-to-br from-ai-sky/50 to-ai-mist flex items-center justify-center overflow-hidden">
                     @if ($product->imageUrl())
                         <img src="{{ $product->imageUrl() }}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
@@ -180,6 +187,29 @@
         </form>
     </div>
 </div>
+
+{{-- Alert popup --}}
+<div id="pos-alert-modal" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-black/50" id="pos-alert-backdrop"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-6 max-w-sm w-[90%]">
+        <h3 class="text-lg font-bold text-ai-navy mb-2">Notice</h3>
+        <p id="pos-alert-message" class="text-slate-600 text-sm mb-5 leading-relaxed"></p>
+        <button type="button" id="pos-alert-ok" class="w-full py-2.5 bg-ai-navy text-white rounded-lg font-semibold">OK</button>
+    </div>
+</div>
+
+{{-- Pay confirm popup --}}
+<div id="pos-confirm-modal" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-black/50" id="pos-confirm-backdrop"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-6 max-w-sm w-[90%]">
+        <h3 class="text-lg font-bold text-ai-navy mb-2">Confirm Payment</h3>
+        <p id="pos-confirm-message" class="text-slate-600 text-sm mb-5 leading-relaxed"></p>
+        <div class="flex gap-3">
+            <button type="button" id="pos-confirm-cancel" class="flex-1 py-2.5 rounded-lg border border-ai-grey text-slate-700 font-semibold">Cancel</button>
+            <button type="button" id="pos-confirm-ok" class="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-ai-cyan to-ai-purple text-white font-semibold">Confirm Pay</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -233,6 +263,54 @@
         document.addEventListener(evt, unlockSound, { once: true, capture: true });
     });
 
+    function showPosAlert(message) {
+        const modal = document.getElementById('pos-alert-modal');
+        document.getElementById('pos-alert-message').textContent = message;
+        modal.classList.remove('hidden');
+        return new Promise(resolve => {
+            const close = () => {
+                modal.classList.add('hidden');
+                document.getElementById('pos-alert-ok').onclick = null;
+                document.getElementById('pos-alert-backdrop').onclick = null;
+                resolve();
+            };
+            document.getElementById('pos-alert-ok').onclick = close;
+            document.getElementById('pos-alert-backdrop').onclick = close;
+        });
+    }
+
+    function showPosConfirm(message) {
+        const modal = document.getElementById('pos-confirm-modal');
+        document.getElementById('pos-confirm-message').textContent = message;
+        modal.classList.remove('hidden');
+        return new Promise(resolve => {
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                document.getElementById('pos-confirm-ok').onclick = null;
+                document.getElementById('pos-confirm-cancel').onclick = null;
+                document.getElementById('pos-confirm-backdrop').onclick = null;
+                resolve(result);
+            };
+            document.getElementById('pos-confirm-ok').onclick = () => cleanup(true);
+            document.getElementById('pos-confirm-cancel').onclick = () => cleanup(false);
+            document.getElementById('pos-confirm-backdrop').onclick = () => cleanup(false);
+        });
+    }
+
+    function stockError(name) {
+        return (name || 'Product') + ' — ei product stock e nei';
+    }
+
+    function validateCartStock() {
+        for (const [id, item] of cart) {
+            const p = products.find(x => x.id == id);
+            if (!p || p.stock <= 0 || item.qty > p.stock) {
+                return stockError(p?.name || item.name);
+            }
+        }
+        return null;
+    }
+
     const TAB_CYAN_ON = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-cyan text-white';
     const TAB_CYAN_OFF = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-navy text-white/60';
     const TAB_PURPLE_ON = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-ai-purple text-white';
@@ -266,8 +344,9 @@
     function addProduct(id) {
         const p = products.find(x => x.id == id);
         if (!p) return;
+        if (p.stock <= 0) return showPosAlert(stockError(p.name));
         const cur = cart.get(id) || { ...p, qty: 0, discount: 0 };
-        if (cur.qty >= p.stock) return alert('Not enough stock for ' + p.name);
+        if (cur.qty >= p.stock) return showPosAlert(stockError(p.name));
         cur.qty++;
         cart.set(id, cur);
         playAddSound();
@@ -316,22 +395,43 @@
 
         body.querySelectorAll('[data-qty]').forEach(inp => inp.onchange = () => {
             const item = cart.get(+inp.dataset.qty);
-            item.qty = Math.min(Math.max(+inp.value, 1), item.stock);
+            const p = products.find(x => x.id == item.id);
+            if (!p || p.stock <= 0) {
+                cart.delete(+inp.dataset.qty);
+                showPosAlert(stockError(p?.name || item.name));
+                renderCart();
+                return;
+            }
+            if (+inp.value > p.stock) {
+                showPosAlert(stockError(p.name));
+                inp.value = p.stock;
+            }
+            item.qty = Math.min(Math.max(+inp.value, 1), p.stock);
             cart.set(+inp.dataset.qty, item);
             renderCart();
         });
         body.querySelectorAll('[data-remove]').forEach(btn => btn.onclick = () => { cart.delete(+btn.dataset.remove); renderCart(); });
     }
 
-    document.querySelectorAll('.product-card').forEach(c => c.onclick = () => { unlockSound(); addProduct(+c.dataset.id); });
+    document.querySelectorAll('.product-card').forEach(c => {
+        c.onclick = () => {
+            if (c.dataset.outOfStock === '1' || +c.dataset.stock <= 0) {
+                return showPosAlert(stockError(c.dataset.name));
+            }
+            unlockSound();
+            addProduct(+c.dataset.id);
+        };
+    });
     document.getElementById('search-name').oninput = filterProducts;
     document.getElementById('scan-barcode').onkeydown = e => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
         const code = e.target.value.trim().toLowerCase();
         const p = products.find(x => (x.barcode||'').toLowerCase() === code || String(x.id) === code);
-        if (p) { addProduct(p.id); e.target.value = ''; }
-        else alert('Product not found');
+        if (!p) return showPosAlert('Product khujte pawa jay ni');
+        if (p.stock <= 0) return showPosAlert(stockError(p.name));
+        addProduct(p.id);
+        e.target.value = '';
     };
     document.getElementById('tab-category').onclick = () => {
         filterMode='category'; activeFilter='';
@@ -347,6 +447,23 @@
     };
     document.getElementById('cancel-btn').onclick = () => { cart.clear(); renderCart(); };
     renderChips();
+
+    let allowCheckoutSubmit = false;
+    document.getElementById('checkout-form').addEventListener('submit', async e => {
+        if (allowCheckoutSubmit) return;
+        e.preventDefault();
+        if (cart.size === 0) return;
+
+        const stockErr = validateCartStock();
+        if (stockErr) return showPosAlert(stockErr);
+
+        const grand = document.getElementById('grand-total').textContent;
+        const confirmed = await showPosConfirm('Grand Total: ' + grand + '\n\nPayment confirm korben?');
+        if (!confirmed) return;
+
+        allowCheckoutSubmit = true;
+        e.target.requestSubmit();
+    });
 
     const modal = document.getElementById('customer-modal');
     document.getElementById('open-customer-modal').onclick = () => modal.classList.remove('hidden');

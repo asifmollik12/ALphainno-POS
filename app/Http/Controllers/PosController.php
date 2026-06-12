@@ -21,7 +21,6 @@ class PosController extends Controller
 
         $products = Product::query()
             ->where('user_id', $userId)
-            ->where('stock', '>', 0)
             ->orderBy('name')
             ->get();
 
