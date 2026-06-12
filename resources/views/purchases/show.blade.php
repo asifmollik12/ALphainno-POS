@@ -10,26 +10,23 @@
         'partial' => 'bg-amber-100 text-amber-700',
         default => 'bg-red-100 text-red-700',
     };
-    $supplierEmail = $purchase->supplier->email ?? '';
-    $mailSubject = rawurlencode('Purchase Invoice #'.$purchase->reference);
-    $mailBody = rawurlencode("Please find purchase invoice #{$purchase->reference} dated {$purchase->purchase_date->format('M d, Y')}.");
-    $mailto = $supplierEmail ? "mailto:{$supplierEmail}?subject={$mailSubject}&body={$mailBody}" : '#';
+    $gmailUrl = $purchase->gmailComposeUrl();
 @endphp
 
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
     <div class="xl:col-span-8 space-y-4">
         <div class="flex flex-wrap items-center justify-end gap-2">
             <button type="button" onclick="window.print()" class="px-5 py-2 rounded-lg bg-ai-purple hover:bg-violet-600 text-white text-sm font-medium">Print</button>
-            <a href="{{ $mailto }}" @class(['px-5 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium inline-flex items-center gap-2', 'pointer-events-none opacity-50' => ! $supplierEmail])>
+            <a href="{{ $gmailUrl ?? '#' }}" target="_blank" rel="noopener" @class(['px-5 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium inline-flex items-center gap-2', 'pointer-events-none opacity-50' => ! $gmailUrl])>
                 <svg class="w-4 h-4 text-ai-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 Send
             </a>
             <x-row-actions-dropdown>
-                <button type="button" @click="close(); $dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-left">
+                <button type="button" @click="openPayModal({ id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-left">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     Make a payment
                 </button>
-                <a href="{{ $mailto }}" @class(['flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700', 'pointer-events-none opacity-50' => ! $supplierEmail])>
+                <a href="{{ $gmailUrl ?? '#' }}" target="_blank" rel="noopener" @class(['flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700', 'pointer-events-none opacity-50' => ! $gmailUrl]) @click="close()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                     Email
                 </a>
@@ -120,9 +117,9 @@
             </dl>
 
             @if ($purchase->due_amount > 0)
-            <button type="button" @click="$dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="mt-4 w-full py-2 rounded-lg border border-ai-purple text-ai-purple text-sm font-medium hover:bg-violet-50">Make a payment</button>
+            <button type="button" @click="window.openPurchasePayModal({ id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="mt-4 w-full py-2 rounded-lg border border-ai-purple text-ai-purple text-sm font-medium hover:bg-violet-50">Make a payment</button>
             @else
-            <button type="button" @click="$dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: 0 })" class="mt-4 w-full py-2 rounded-lg border border-slate-200 text-slate-500 text-sm font-medium hover:bg-slate-50">Make a payment</button>
+            <button type="button" @click="window.openPurchasePayModal({ id: {{ $purchase->id }}, ref: @json($purchase->reference), due: 0 })" class="mt-4 w-full py-2 rounded-lg border border-slate-200 text-slate-500 text-sm font-medium hover:bg-slate-50">Make a payment</button>
             @endif
         </div>
 
@@ -142,5 +139,4 @@
     </div>
 </div>
 
-@include('purchases._pay-modal', ['currency' => $currency])
 @endsection

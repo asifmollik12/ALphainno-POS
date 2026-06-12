@@ -1,10 +1,9 @@
 @php
     $currency = $currency ?? (auth()->user()->shopSetting?->currency ?? '৳');
-    $payUrlPattern = route('purchases.pay', ['purchase' => '__ID__']);
 @endphp
 
-<div x-data="payModal()" @open-pay.window="openPay($event.detail)" x-cloak>
-    <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" @keydown.escape.window="show = false">
+<div data-purchase-pay-modal x-data="payModal()" @open-pay.window="openPay($event.detail)">
+    <div x-show="show" x-cloak class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/40" @keydown.escape.window="show = false">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg" @click.outside="show = false">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <h3 class="font-bold text-slate-900">Make Purchase</h3>
@@ -57,61 +56,3 @@
         </div>
     </div>
 </div>
-
-@once
-@push('scripts')
-<script>
-function payModal() {
-    const payUrlPattern = @json($payUrlPattern);
-    return {
-        show: false,
-        purchaseId: null,
-        due: 0,
-        invoiceRef: '',
-        payments: [{ amount: 0, method: '' }],
-        currency: @json($currency),
-        get actionUrl() { return payUrlPattern.replace('__ID__', this.purchaseId); },
-        get dueText() { return this.currency + Number(this.due).toFixed(2); },
-        get totalPaid() {
-            return this.payments.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
-        },
-        get primaryMethod() {
-            const row = this.payments.find(r => r.method) || this.payments[0];
-            return row?.method || 'cash';
-        },
-        openPay(detail) {
-            this.purchaseId = detail.id;
-            this.due = detail.due;
-            this.invoiceRef = detail.ref || '';
-            this.payments = [{ amount: detail.due, method: '' }];
-            this.show = true;
-        },
-        setFullPaid() {
-            if (this.payments.length === 1) {
-                this.payments[0].amount = this.due;
-            } else {
-                this.payments = [{ amount: this.due, method: this.payments[0]?.method || '' }];
-            }
-        },
-        addPayment() {
-            this.payments.push({ amount: 0, method: '' });
-        },
-        removePayment(index) {
-            if (this.payments.length > 1) {
-                this.payments.splice(index, 1);
-            }
-        },
-        syncPaidAmount() {
-            if (this.totalPaid <= 0) {
-                alert('Enter a paid amount.');
-                return false;
-            }
-            if (this.totalPaid > this.due) {
-                this.payments[0].amount = Math.max(this.due - this.payments.slice(1).reduce((s, r) => s + (Number(r.amount) || 0), 0), 0);
-            }
-        },
-    };
-}
-</script>
-@endpush
-@endonce

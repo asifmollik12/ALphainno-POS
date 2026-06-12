@@ -59,4 +59,25 @@ class Purchase extends Model
             default => 'UNPAID',
         };
     }
+
+    public function gmailComposeUrl(?string $email = null): ?string
+    {
+        $email = $email ?? $this->supplier?->email;
+        if (! $email) {
+            return null;
+        }
+
+        $currency = auth()->user()?->shopSetting?->currency ?? '৳';
+        $showUrl = route('purchases.show', $this);
+        $body = "Purchase Invoice: #{$this->reference}\n"
+            ."Date: {$this->purchase_date->format('M d, Y')}\n"
+            ."Total: {$currency}".number_format((float) $this->total, 2)."\n"
+            ."Due: {$currency}".number_format((float) $this->due_amount, 2)."\n\n"
+            ."View invoice: {$showUrl}";
+
+        return 'https://mail.google.com/mail/?view=cm&fs=1'
+            .'&to='.rawurlencode($email)
+            .'&su='.rawurlencode('Purchase Invoice #'.$this->reference)
+            .'&body='.rawurlencode($body);
+    }
 }

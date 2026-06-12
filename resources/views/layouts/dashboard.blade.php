@@ -133,7 +133,73 @@
         </main>
     </div>
 </div>
+
+@include('purchases._pay-modal', ['currency' => $shopSetting->currency ?? '৳'])
+
 <script>
+    const purchasePayUrlPattern = @json(route('purchases.pay', ['purchase' => '__ID__']));
+    const purchasePayCurrency = @json($shopSetting->currency ?? '৳');
+
+    function payModal() {
+        return {
+            show: false,
+            purchaseId: null,
+            due: 0,
+            invoiceRef: '',
+            payments: [{ amount: 0, method: '' }],
+            currency: purchasePayCurrency,
+            get actionUrl() { return purchasePayUrlPattern.replace('__ID__', this.purchaseId); },
+            get dueText() { return this.currency + Number(this.due).toFixed(2); },
+            get totalPaid() {
+                return this.payments.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+            },
+            get primaryMethod() {
+                const row = this.payments.find(r => r.method) || this.payments[0];
+                return row?.method || 'cash';
+            },
+            openPay(detail) {
+                if (!detail?.id) return;
+                this.purchaseId = detail.id;
+                this.due = Number(detail.due) || 0;
+                this.invoiceRef = detail.ref || '';
+                this.payments = [{ amount: this.due, method: '' }];
+                this.show = true;
+            },
+            setFullPaid() {
+                if (this.payments.length === 1) {
+                    this.payments[0].amount = this.due;
+                } else {
+                    this.payments = [{ amount: this.due, method: this.payments[0]?.method || '' }];
+                }
+            },
+            addPayment() {
+                this.payments.push({ amount: 0, method: '' });
+            },
+            removePayment(index) {
+                if (this.payments.length > 1) {
+                    this.payments.splice(index, 1);
+                }
+            },
+            syncPaidAmount(event) {
+                if (this.totalPaid <= 0) {
+                    event.preventDefault();
+                    alert('Enter a paid amount.');
+                    return;
+                }
+                if (this.totalPaid > this.due) {
+                    this.payments[0].amount = Math.max(
+                        this.due - this.payments.slice(1).reduce((s, r) => s + (Number(r.amount) || 0), 0),
+                        0
+                    );
+                }
+            },
+        };
+    }
+
+    window.openPurchasePayModal = function (detail) {
+        window.dispatchEvent(new CustomEvent('open-pay', { detail, bubbles: true }));
+    };
+
     function rowActionsDropdown() {
         return {
             open: false,
@@ -145,6 +211,12 @@
             },
             close() {
                 this.open = false;
+            },
+            openPayModal(detail) {
+                this.close();
+                if (typeof window.openPurchasePayModal === 'function') {
+                    window.openPurchasePayModal(detail);
+                }
             },
             position() {
                 const btn = this.$refs.trigger;
