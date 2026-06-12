@@ -37,7 +37,7 @@ class PurchaseController extends Controller
             });
         }
 
-        $purchases = $query->latest('purchase_date')->latest('id')->paginate(20)->withQueryString();
+        $purchases = $query->with(['supplier', 'items'])->latest('purchase_date')->latest('id')->paginate(20)->withQueryString();
         $stats = $this->purchaseStats($userId, $from, $to);
         $currency = $request->user()->shopSetting?->currency ?? '৳';
 

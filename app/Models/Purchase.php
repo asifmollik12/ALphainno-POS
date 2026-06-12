@@ -67,17 +67,136 @@ class Purchase extends Model
             return null;
         }
 
-        $currency = auth()->user()?->shopSetting?->currency ?? '৳';
-        $showUrl = route('purchases.show', $this);
-        $body = "Purchase Invoice: #{$this->reference}\n"
-            ."Date: {$this->purchase_date->format('M d, Y')}\n"
-            ."Total: {$currency}".number_format((float) $this->total, 2)."\n"
-            ."Due: {$currency}".number_format((float) $this->due_amount, 2)."\n\n"
-            ."View invoice: {$showUrl}";
+        $subject = $this->emailSubject();
+        $body = $this->emailDraftBody();
 
         return 'https://mail.google.com/mail/?view=cm&fs=1'
             .'&to='.rawurlencode($email)
-            .'&su='.rawurlencode('Purchase Invoice #'.$this->reference)
+            .'&su='.rawurlencode($subject)
             .'&body='.rawurlencode($body);
+    }
+
+    public function emailSubject(): string
+    {
+        $setting = auth()->user()?->shopSetting;
+        $company = $setting?->company_name ?? 'Alphainno POS';
+        $currency = $setting?->currency ?? '৳';
+        $due = $currency.number_format((float) $this->due_amount, 2);
+
+        return "Purchase Invoice #{$this->reference} — Due {$due} | {$company}";
+    }
+
+    public function emailDraftBody(): string
+    {
+        $this->loadMissing(['items', 'supplier']);
+
+        $setting = auth()->user()?->shopSetting;
+        $user = auth()->user();
+        $currency = $setting?->currency ?? '৳';
+        $company = $setting?->company_name ?? 'Alphainno POS';
+        $fmt = fn (float $n) => $currency.number_format($n, 2);
+
+        $supplierName = $this->supplier?->name ?? 'Supplier';
+        $lineSubtotal = 0;
+        $lineTax = 0;
+        $itemLines = [];
+
+        foreach ($this->items as $index => $item) {
+            $qty = (int) $item->quantity;
+            $unit = (float) $item->unit_cost;
+            $tax = (float) ($item->tax_amount ?? 0);
+            $lineBase = round($qty * $unit, 2);
+            $lineSubtotal += $lineBase;
+            $lineTax += $tax;
+            $lineTotal = round($lineBase + $tax, 2);
+            $taxRate = (float) ($item->tax_rate ?? 0);
+
+            $itemLines[] = sprintf(
+                '%d. %s'."\n".'   Quantity: %d  |  Unit Price: %s  |  Tax: %s (%s%%)  |  Line Total: %s',
+                $index + 1,
+                $item->product_name,
+                $qty,
+                $fmt($unit),
+                $fmt($tax),
+                number_format($taxRate, 1),
+                $fmt($lineTotal)
+            );
+        }
+
+        if ($itemLines === []) {
+            $itemLines[] = 'No line items recorded.';
+        }
+
+        $taxTotal = (float) ($this->tax_amount ?? $lineTax);
+        $subtotalExclTax = $lineSubtotal > 0 ? $lineSubtotal : max((float) $this->total - $taxTotal, 0);
+        $showUrl = route('purchases.show', $this);
+        $divider = str_repeat('─', 42);
+
+        $lines = [
+            'Dear '.$supplierName.',',
+            '',
+            'We hope this message finds you well.',
+            '',
+            'Please review the purchase invoice details below. Kindly confirm the order and advise us on payment terms if any amount remains outstanding.',
+            '',
+            $divider,
+            'PURCHASE INVOICE',
+            $divider,
+            '',
+            'Invoice Number:  #'.$this->reference,
+            'Invoice Date:    '.$this->purchase_date->format('F d, Y'),
+            'Payment Status:  '.$this->statusLabel(),
+            '',
+            'Supplier Name:   '.($this->supplier?->name ?? '—'),
+            'Supplier Phone:  '.($this->supplier?->phone ?? '—'),
+            'Supplier Email:  '.($this->supplier?->email ?? '—'),
+            '',
+            $divider,
+            'ITEM DETAILS',
+            $divider,
+            '',
+            implode("\n\n", $itemLines),
+            '',
+            $divider,
+            'PAYMENT SUMMARY',
+            $divider,
+            '',
+            'Subtotal (excl. tax):  '.$fmt($subtotalExclTax),
+            'Tax Amount:            '.$fmt($taxTotal),
+            'Total Amount:          '.$fmt((float) $this->total),
+            'Paid Amount:           '.$fmt((float) $this->paid_amount),
+            'Due Amount:            '.$fmt((float) $this->due_amount),
+            '',
+        ];
+
+        if ($this->notes) {
+            $lines[] = 'Note: '.$this->notes;
+            $lines[] = '';
+        }
+
+        $lines = array_merge($lines, [
+            'View full invoice online:',
+            $showUrl,
+            '',
+            'If you have any questions about this invoice, please contact us at your earliest convenience.',
+            '',
+            'Thank you for your continued partnership.',
+            '',
+            'Best regards,',
+            $user?->name ?? 'Accounts Team',
+            $company,
+        ]);
+
+        if ($setting?->phone) {
+            $lines[] = 'Phone: '.$setting->phone;
+        }
+        if ($setting?->email) {
+            $lines[] = 'Email: '.$setting->email;
+        }
+        if ($setting?->address) {
+            $lines[] = 'Address: '.$setting->address;
+        }
+
+        return implode("\n", $lines);
     }
 }
