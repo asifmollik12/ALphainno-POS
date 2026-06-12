@@ -25,6 +25,6 @@ class Uploads
             return null;
         }
 
-        return Storage::disk('public')->url($path);
+        return asset('storage/'.ltrim($path, '/'));
     }
 }

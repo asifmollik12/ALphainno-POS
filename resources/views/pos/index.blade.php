@@ -11,6 +11,36 @@
 @endphp
 
 @section('content')
+@push('head')
+<style>
+    .pos-product-card { display: flex; flex-direction: column; height: 100%; }
+    .pos-product-thumb {
+        position: relative;
+        width: 100%;
+        padding-top: 100%;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, rgba(224,242,254,.55), rgba(241,245,249,.95));
+        overflow: hidden;
+    }
+    .pos-product-thumb-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+    }
+    .pos-product-thumb-inner img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        display: block;
+    }
+    .pos-product-meta { flex: 1; display: flex; flex-direction: column; min-height: 4.25rem; }
+</style>
+@endpush
 <div class="flex flex-col lg:flex-row h-[calc(100vh-0px)] bg-ai-mist">
     {{-- Left: Product picker --}}
     <div class="lg:w-[42%] xl:w-[38%] bg-ai-sky/40 border-r border-ai-grey/60 p-3 flex flex-col min-h-[50vh] lg:min-h-0">
@@ -25,11 +55,12 @@
 
         <div id="filter-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[24px]"></div>
 
-        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 overflow-y-auto flex-1 pr-1 pb-2">
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto flex-1 pr-1 pb-2 auto-rows-fr">
             @foreach ($products as $product)
+            @php $initial = strtoupper(substr($product->name, 0, 1)); @endphp
             <button type="button"
                     @disabled($product->stock <= 0)
-                    class="product-card group flex flex-col bg-white border border-ai-grey/80 rounded-lg overflow-hidden text-left transition-all {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}"
+                    class="product-card pos-product-card group bg-white border border-ai-grey/80 rounded-lg overflow-hidden text-left transition-all {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}"
                     data-id="{{ $product->id }}"
                     data-name="{{ $product->name }}"
                     data-price="{{ $product->price }}"
@@ -39,21 +70,25 @@
                     data-brand="{{ $product->brand ?? '' }}"
                     data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}"
                     data-out-of-stock="{{ $product->stock <= 0 ? '1' : '0' }}">
-                <div class="relative aspect-square w-full bg-gradient-to-br from-ai-sky/40 to-ai-mist flex items-center justify-center overflow-hidden">
-                    @if ($product->imageUrl())
-                        <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200">
-                    @else
-                        <span class="text-4xl font-black text-ai-grey/60">{{ strtoupper(substr($product->name, 0, 1)) }}</span>
-                    @endif
+                <div class="pos-product-thumb">
+                    <div class="pos-product-thumb-inner">
+                        @if ($product->imageUrl())
+                            <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <span class="hidden w-full h-full items-center justify-center text-4xl font-black text-ai-grey/60">{{ $initial }}</span>
+                        @else
+                            <span class="text-4xl font-black text-ai-grey/60">{{ $initial }}</span>
+                        @endif
+                    </div>
                     @if ($product->stock <= 0)
-                        <span class="absolute inset-x-0 bottom-0 bg-red-600/90 text-white text-[10px] font-bold text-center py-1">Out of stock</span>
+                        <span class="absolute inset-x-0 bottom-0 bg-red-600/90 text-white text-[10px] font-bold text-center py-1 z-10">Out of stock</span>
                     @endif
                 </div>
-                <div class="flex flex-col flex-1 px-2 py-2 min-h-[4.5rem]">
+                <div class="pos-product-meta px-2.5 py-2">
                     <div class="text-[11px] font-semibold text-slate-800 line-clamp-2 leading-snug flex-1">
                         {{ $product->name }}
                     </div>
-                    <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-100 text-xs">
+                    <div class="flex items-center justify-between mt-auto pt-1.5 border-t border-slate-100 text-xs">
                         <span class="font-bold text-ai-purple">{{ $currency }}{{ number_format($product->price, 2) }}</span>
                         <span class="text-slate-400">{{ $product->stock }} pcs</span>
                     </div>
