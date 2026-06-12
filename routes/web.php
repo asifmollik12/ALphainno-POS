@@ -42,6 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/inventory/shortage/print', [InventoryController::class, 'shortagePrint'])->name('inventory.shortage.print');
     Route::get('/inventory/shortage/export', [InventoryController::class, 'shortageExport'])->name('inventory.shortage.export');
 
+    Route::get('purchases/print', [PurchaseController::class, 'print'])->name('purchases.print');
+    Route::get('purchases/export', [PurchaseController::class, 'export'])->name('purchases.export');
+    Route::post('purchases/{purchase}/pay', [PurchaseController::class, 'pay'])->name('purchases.pay');
     Route::resource('purchases', PurchaseController::class)->only(['index', 'create', 'store', 'show']);
     Route::resource('suppliers', SupplierController::class)->except(['show']);
     Route::resource('purchase-returns', PurchaseReturnController::class)->only(['index', 'create', 'store']);

@@ -38,4 +38,24 @@ class Purchase extends Model
     {
         return $this->hasMany(PurchaseItem::class);
     }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'related_id')
+            ->where('related_type', self::class);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid';
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'PAID',
+            'partial' => 'PARTIAL',
+            default => 'UNPAID',
+        };
+    }
 }
