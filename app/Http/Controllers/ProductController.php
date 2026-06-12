@@ -102,6 +102,14 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Product added.');
     }
 
+    public function show(Product $product, Request $request)
+    {
+        $this->authorizeProduct($product);
+        $currency = $request->user()->shopSetting?->currency ?? '৳';
+
+        return view('products.show', compact('product', 'currency'));
+    }
+
     public function edit(Product $product)
     {
         $this->authorizeProduct($product);
