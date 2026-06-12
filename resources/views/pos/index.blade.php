@@ -212,7 +212,7 @@
         attempt.then(() => {
             addSoundEl.pause();
             addSoundEl.currentTime = 0;
-            addSoundEl.volume = 0.9;
+            addSoundEl.volume = 1;
             soundReady = true;
         }).catch(() => {});
     }
@@ -221,10 +221,10 @@
         if (!addSoundEl) return;
         unlockSound();
         const clip = addSoundEl.cloneNode(true);
-        clip.volume = 0.9;
+        clip.volume = 1;
         clip.play().catch(() => {
             addSoundEl.currentTime = 0;
-            addSoundEl.volume = 0.9;
+            addSoundEl.volume = 1;
             addSoundEl.play().catch(() => {});
         });
     }
