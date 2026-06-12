@@ -140,6 +140,7 @@ function bindRow(row) {
         if (p) {
             row.querySelector('.cost-input').value = p.cost_price;
             row.querySelector('.sell-input').value = p.price;
+            row.querySelector('.tax-input').value = p.tax_rate || 0;
         }
         recalc();
     });

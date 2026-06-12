@@ -92,7 +92,7 @@ class PurchaseController extends Controller
                     $p->total,
                     $p->paid_amount,
                     $p->due_amount,
-                    0,
+                    $p->tax_amount ?? 0,
                     $p->payment_status,
                 ]);
             }
@@ -109,6 +109,7 @@ class PurchaseController extends Controller
             'name' => $p->name,
             'cost_price' => (float) $p->cost_price,
             'price' => (float) $p->price,
+            'tax_rate' => (float) ($p->tax_rate ?? 0),
         ])->values();
         $currency = $request->user()->shopSetting?->currency ?? '৳';
 
@@ -133,12 +134,16 @@ class PurchaseController extends Controller
         $userId = $request->user()->id;
 
         DB::transaction(function () use ($data, $userId) {
-            $total = 0;
+            $subtotal = 0;
+            $taxTotal = 0;
             foreach ($data['items'] as $item) {
                 $line = round($item['quantity'] * $item['unit_cost'], 2);
                 $taxRate = (float) ($item['tax_rate'] ?? 0);
-                $total += round($line + ($line * $taxRate / 100), 2);
+                $lineTax = round($line * ($taxRate / 100), 2);
+                $subtotal += $line;
+                $taxTotal += $lineTax;
             }
+            $total = round($subtotal + $taxTotal, 2);
             $paid = min((float) ($data['paid_amount'] ?? 0), $total);
             $due = max(round($total - $paid, 2), 0);
             $status = $due <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'due');
@@ -148,6 +153,7 @@ class PurchaseController extends Controller
                 'supplier_id' => $data['supplier_id'],
                 'reference' => 'P_'.strtoupper(Str::random(12)),
                 'total' => $total,
+                'tax_amount' => $taxTotal,
                 'paid_amount' => $paid,
                 'due_amount' => $due,
                 'payment_status' => $status,
@@ -157,7 +163,9 @@ class PurchaseController extends Controller
 
             foreach ($data['items'] as $item) {
                 $product = Product::where('user_id', $userId)->findOrFail($item['product_id']);
-                $subtotal = round($item['quantity'] * $item['unit_cost'], 2);
+                $lineSub = round($item['quantity'] * $item['unit_cost'], 2);
+                $taxRate = (float) ($item['tax_rate'] ?? 0);
+                $lineTax = round($lineSub * ($taxRate / 100), 2);
 
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
@@ -165,7 +173,9 @@ class PurchaseController extends Controller
                     'product_name' => $product->name,
                     'quantity' => $item['quantity'],
                     'unit_cost' => $item['unit_cost'],
-                    'subtotal' => $subtotal,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $lineTax,
+                    'subtotal' => round($lineSub + $lineTax, 2),
                 ]);
 
                 $product->increment('stock', $item['quantity']);
@@ -197,6 +207,7 @@ class PurchaseController extends Controller
             'paid_amount' => ['required', 'numeric', 'min:0.01'],
             'payment_date' => ['required', 'date'],
             'payment_method' => ['nullable', 'string', 'max:30'],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
         ]);
 
         $amount = min((float) $data['paid_amount'], (float) $purchase->due_amount);
@@ -215,7 +226,14 @@ class PurchaseController extends Controller
                 'payment_status' => $status,
             ]);
 
-            $this->recordPayment($purchase->user_id, $purchase, $amount, $data['payment_date'], $data['payment_method'] ?? 'cash');
+            $this->recordPayment(
+                $purchase->user_id,
+                $purchase,
+                $amount,
+                $data['payment_date'],
+                $data['payment_method'] ?? 'cash',
+                $data['payment_reference'] ?? null
+            );
         });
 
         return back()->with('success', 'Payment recorded.');
@@ -244,11 +262,16 @@ class PurchaseController extends Controller
         ];
     }
 
-    private function recordPayment(int $userId, Purchase $purchase, float $amount, string $date, string $method): void
+    private function recordPayment(int $userId, Purchase $purchase, float $amount, string $date, string $method, ?string $reference = null): void
     {
         $cash = Account::where('user_id', $userId)->where('code', '1000')->first();
         if (! $cash) {
             return;
+        }
+
+        $desc = 'Purchase payment ('.$method.')';
+        if ($reference) {
+            $desc .= ' — '.$reference;
         }
 
         Transaction::create([
@@ -257,7 +280,7 @@ class PurchaseController extends Controller
             'type' => 'debit',
             'amount' => $amount,
             'reference' => $purchase->reference,
-            'description' => 'Purchase payment ('.$method.')',
+            'description' => $desc,
             'transaction_date' => $date,
             'related_type' => Purchase::class,
             'related_id' => $purchase->id,

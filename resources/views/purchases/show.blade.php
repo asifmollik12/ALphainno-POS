@@ -10,15 +10,36 @@
         'partial' => 'bg-amber-100 text-amber-700',
         default => 'bg-red-100 text-red-700',
     };
+    $supplierEmail = $purchase->supplier->email ?? '';
+    $mailSubject = rawurlencode('Purchase Invoice #'.$purchase->reference);
+    $mailBody = rawurlencode("Please find purchase invoice #{$purchase->reference} dated {$purchase->purchase_date->format('M d, Y')}.");
+    $mailto = $supplierEmail ? "mailto:{$supplierEmail}?subject={$mailSubject}&body={$mailBody}" : '#';
 @endphp
 
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
     <div class="xl:col-span-8 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <a href="{{ route('purchases.index') }}" class="text-sm text-slate-500 hover:text-slate-800">&larr; Back to invoices</a>
-            <div class="flex gap-2">
-                <button type="button" onclick="window.print()" class="px-4 py-2 rounded-lg bg-ai-navy text-white text-sm font-medium">Print</button>
-            </div>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+            <button type="button" onclick="window.print()" class="px-5 py-2 rounded-lg bg-ai-purple hover:bg-violet-600 text-white text-sm font-medium">Print</button>
+            <a href="{{ $mailto }}" @class(['px-5 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium inline-flex items-center gap-2', 'pointer-events-none opacity-50' => ! $supplierEmail])>
+                <svg class="w-4 h-4 text-ai-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                Send
+            </a>
+            <x-row-actions-dropdown>
+                @if ($purchase->due_amount > 0)
+                <button type="button" @click="close(); $dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-left">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    Make a payment
+                </button>
+                @endif
+                <a href="{{ $mailto }}" @class(['flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700', 'pointer-events-none opacity-50' => ! $supplierEmail])>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Email
+                </a>
+                <button type="button" onclick="window.print()" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-left">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Print
+                </button>
+            </x-row-actions-dropdown>
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" x-data="{ tab: 'products' }">
@@ -46,9 +67,9 @@
                             <td class="px-4 py-3 text-slate-500">{{ $item->product_id }}</td>
                             <td class="px-4 py-3 font-medium">{{ $item->product_name }}</td>
                             <td class="px-4 py-3 text-right">{{ $item->quantity }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format($item->unit_cost, 2) }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format($item->subtotal, 2) }}</td>
-                            <td class="px-4 py-3 text-right text-slate-500">0</td>
+                            <td class="px-4 py-3 text-right">{{ number_format($item->unit_cost, 0) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format($item->quantity * $item->unit_cost, 0) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format($item->tax_amount ?? 0, 0) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -95,9 +116,9 @@
 
             <dl class="space-y-2 text-sm border-t border-slate-100 pt-4">
                 <div class="flex justify-between"><dt class="text-slate-500">Total Amount</dt><dd class="font-medium">{{ $fmt($purchase->total) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-slate-500">Total Tax</dt><dd>+ {{ $fmt(0) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-slate-500">Total Paid Amount</dt><dd class="text-emerald-600">- {{ $fmt($purchase->paid_amount) }}</dd></div>
-                <div class="flex justify-between font-bold pt-2 border-t"><dt>Due Amount</dt><dd class="{{ $purchase->due_amount > 0 ? 'text-red-600' : '' }}">{{ $fmt($purchase->due_amount) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-500">Total Tax</dt><dd>+ {{ number_format($purchase->tax_amount ?? 0, 0) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-500">Total Paid Amount</dt><dd class="text-emerald-600">- {{ number_format($purchase->paid_amount, 2) }}</dd></div>
+                <div class="flex justify-between font-bold pt-2 border-t"><dt>Due Amount</dt><dd class="{{ $purchase->due_amount > 0 ? 'text-red-600' : '' }}">{{ number_format($purchase->due_amount, 2) }}</dd></div>
             </dl>
 
             @if ($purchase->due_amount > 0)

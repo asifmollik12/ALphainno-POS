@@ -95,6 +95,11 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($purchases as $purchase)
+                @php
+                    $supplierEmail = $purchase->supplier->email ?? '';
+                    $mailSubject = rawurlencode('Purchase Invoice '.$purchase->reference);
+                    $mailto = $supplierEmail ? 'mailto:'.$supplierEmail.'?subject='.$mailSubject : '#';
+                @endphp
                 <tr class="hover:bg-slate-50">
                     <td class="px-4 py-3">
                         <a href="{{ route('purchases.show', $purchase) }}" class="font-medium text-ai-cyan hover:underline">{{ $purchase->reference }}</a>
@@ -104,7 +109,7 @@
                     <td class="px-4 py-3 text-right font-medium">{{ $fmt($purchase->total) }}</td>
                     <td class="px-4 py-3 text-right">{{ $fmt($purchase->paid_amount) }}</td>
                     <td class="px-4 py-3 text-right {{ $purchase->due_amount > 0 ? 'text-red-600 font-semibold' : '' }}">{{ $fmt($purchase->due_amount) }}</td>
-                    <td class="px-4 py-3 text-right text-slate-500">{{ $fmt(0) }}</td>
+                    <td class="px-4 py-3 text-right text-slate-500">{{ $fmt($purchase->tax_amount ?? 0) }}</td>
                     <td class="px-4 py-3 text-center">
                         <x-row-actions-dropdown>
                             <a href="{{ route('purchases.show', $purchase) }}" class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700">
@@ -117,6 +122,10 @@
                                 Make a payment
                             </button>
                             @endif
+                            <a href="{{ $mailto }}" @class(['flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700', 'pointer-events-none opacity-50' => ! $supplierEmail])>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                Email
+                            </a>
                         </x-row-actions-dropdown>
                     </td>
                 </tr>
