@@ -174,7 +174,6 @@ class SupplierController extends Controller
         $userId = $request->user()->id;
         $path = $request->file('csv_file')->getRealPath();
         $handle = fopen($path, 'r');
-        $header = fgetcsv($handle);
         $count = 0;
 
         DB::transaction(function () use ($handle, $userId, &$count) {
@@ -184,7 +183,6 @@ class SupplierController extends Controller
                     $header = array_map('strtolower', array_map('trim', $row));
                     if (! in_array('name', $header, true)) {
                         $header = ['name', 'phone', 'email', 'address'];
-                        // first row is data
                         $this->importSupplierRow($userId, $header, $row, $count);
                     }
                     continue;
