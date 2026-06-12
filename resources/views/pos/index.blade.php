@@ -150,7 +150,7 @@
     </div>
 </div>
 
-<audio id="pos-add-sound" preload="auto" playsinline src="{{ asset('sounds/pos-add.wav') }}"></audio>
+<audio id="pos-add-sound" preload="auto" playsinline src="{{ asset('sounds/pos-add.wav?v=2') }}"></audio>
 
 {{-- Manage Customer Modal --}}
 <div id="customer-modal" class="fixed inset-0 z-50 hidden">
