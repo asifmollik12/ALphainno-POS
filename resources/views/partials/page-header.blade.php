@@ -4,6 +4,6 @@
         @isset($subtitle)<p class="text-slate-500 text-sm mt-1">{{ $subtitle }}</p>@endisset
     </div>
     @isset($actionUrl)
-        <a href="{{ $actionUrl }}" class="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium">{{ $actionLabel ?? '+ Add' }}</a>
+        <a href="{{ $actionUrl }}" class="px-4 py-2 rounded-lg bg-ai-purple hover:bg-violet-500 text-white text-sm font-medium">{{ $actionLabel ?? '+ Add' }}</a>
     @endisset
 </div>

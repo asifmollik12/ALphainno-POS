@@ -5,8 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Dashboard') — Alphainno POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ai: {
+                            navy: '#0c1222',
+                            cyan: '#22d3ee',
+                            purple: '#8b5cf6',
+                            sky: '#e0f2fe',
+                            mist: '#f1f5f9',
+                        },
+                    },
+                },
+            },
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
+        :root {
+            --ai-navy: #0c1222;
+            --ai-cyan: #22d3ee;
+            --ai-purple: #8b5cf6;
+            --ai-sky: #e0f2fe;
+            --ai-mist: #f1f5f9;
+            --ai-grey: #cbd5e1;
+        }
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         [x-cloak] { display: none !important; }
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
@@ -20,15 +45,13 @@
 @endphp
 <div class="flex min-h-screen">
     {{-- Sidebar --}}
-    <aside class="w-64 bg-[#0f172a] text-slate-200 flex flex-col fixed inset-y-0 left-0 z-30">
-        <div class="px-5 py-5 border-b border-slate-800">
+    <aside class="w-64 bg-ai-navy text-slate-200 flex flex-col fixed inset-y-0 left-0 z-30">
+        <div class="px-5 py-5 border-b border-slate-800/80">
             <div class="flex items-center gap-3">
                 @if ($shopSetting?->logoUrl())
-                    <img src="{{ $shopSetting->logoUrl() }}" alt="" class="w-10 h-10 rounded-xl object-contain bg-white p-0.5">
+                    <img src="{{ $shopSetting->logoUrl() }}" alt="" class="w-10 h-10 rounded-xl object-contain bg-ai-navy p-0.5">
                 @else
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
+                <img src="{{ asset('images/alphainno-logo.png') }}" alt="Alphainno" class="w-10 h-10 rounded-xl object-contain">
                 @endif
                 <div>
                     <div class="font-bold text-white text-sm">{{ $shopSetting->company_name ?? 'Alphainno POS' }}</div>
@@ -41,7 +64,7 @@
             @foreach ($posMenu as $item)
                 @if (isset($item['route']))
                     <a href="{{ route($item['route']) }}"
-                       class="flex items-center gap-3 px-5 py-2.5 {{ request()->routeIs(str_replace('.index', '.*', $item['route'])) || request()->routeIs($item['route']) ? 'bg-slate-800/80 text-white border-r-2 border-cyan-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
+                       class="flex items-center gap-3 px-5 py-2.5 {{ request()->routeIs(str_replace('.index', '.*', $item['route'])) || request()->routeIs($item['route']) ? 'bg-white/10 text-white border-r-2 border-ai-cyan' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                         @include('partials.menu-icon', ['icon' => $item['icon']])
                         <span>{{ strtoupper($item['label']) }}</span>
                     </a>
@@ -62,7 +85,7 @@
                         <div x-show="open" x-cloak class="pb-1">
                             @foreach ($item['children'] as $child)
                                 <a href="{{ route($child['route']) }}"
-                                   class="block pl-14 pr-5 py-2 {{ request()->routeIs($child['route']) || request()->routeIs(str_replace('.index', '.*', $child['route'])) ? 'text-cyan-400' : 'text-slate-500 hover:text-white' }}">
+                                   class="block pl-14 pr-5 py-2 {{ request()->routeIs($child['route']) || request()->routeIs(str_replace('.index', '.*', $child['route'])) ? 'text-ai-cyan' : 'text-slate-500 hover:text-white' }}">
                                     {{ strtoupper($child['label']) }}
                                 </a>
                             @endforeach
@@ -78,9 +101,9 @@
         @unless($posFullscreen)
         <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
             <div class="flex items-center gap-2">
-                <a href="{{ route('purchases.create') }}" class="px-3 py-1.5 rounded-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium">Create Purchase</a>
-                <a href="{{ route('transactions.create') }}" class="px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium">Create Transaction</a>
-                <a href="{{ route('pos.index') }}" class="px-3 py-1.5 rounded-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium inline-flex items-center gap-1">
+                <a href="{{ route('purchases.create') }}" class="px-3 py-1.5 rounded-full bg-ai-purple hover:bg-violet-500 text-white text-xs font-medium">Create Purchase</a>
+                <a href="{{ route('transactions.create') }}" class="px-3 py-1.5 rounded-full bg-ai-cyan hover:bg-cyan-300 text-ai-navy text-xs font-medium">Create Transaction</a>
+                <a href="{{ route('pos.index') }}" class="px-3 py-1.5 rounded-full bg-ai-navy hover:bg-slate-800 text-white text-xs font-medium inline-flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                     POS
                 </a>

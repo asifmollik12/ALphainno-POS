@@ -6,12 +6,13 @@
     <title>Sales Invoice — {{ $sale->reference }}</title>
     <style>
         :root {
-            --brand: #6366f1;
-            --brand-dark: #4f46e5;
-            --ink: #0f172a;
+            --brand: #8b5cf6;
+            --brand-dark: #7c3aed;
+            --brand-cyan: #22d3ee;
+            --ink: #0c1222;
             --muted: #64748b;
             --line: #e2e8f0;
-            --surface: #f8fafc;
+            --surface: #e0f2fe;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -323,8 +324,8 @@
         .totals-box .row.subtle { background: var(--surface); color: var(--muted); }
 
         .totals-box .row.grand {
-            background: var(--brand);
-            color: #fff;
+            background: linear-gradient(135deg, var(--brand-cyan), var(--brand));
+            color: var(--ink);
             font-size: 10pt;
             font-weight: 800;
         }
