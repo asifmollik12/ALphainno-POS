@@ -13,12 +13,30 @@
 @section('content')
 @push('head')
 <style>
-    .pos-product-card { display: flex; flex-direction: column; height: 100%; }
+    #product-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-content: start;
+    }
+    @media (min-width: 640px) {
+        #product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .pos-product-cell {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+    }
+    .pos-product-card {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
     .pos-product-thumb {
         position: relative;
-        width: 100%;
-        padding-top: 100%;
-        flex-shrink: 0;
+        flex: 1 1 0;
+        min-height: 0;
         background: linear-gradient(135deg, rgba(224,242,254,.55), rgba(241,245,249,.95));
         overflow: hidden;
     }
@@ -28,7 +46,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 10px;
+        padding: 8px;
     }
     .pos-product-thumb-inner img {
         max-width: 100%;
@@ -38,7 +56,30 @@
         object-fit: contain;
         display: block;
     }
-    .pos-product-meta { flex: 1; display: flex; flex-direction: column; min-height: 4.25rem; }
+    .pos-product-meta {
+        flex: 0 0 auto;
+        padding: 6px 8px 8px;
+        background: #fff;
+        border-top: 1px solid #f1f5f9;
+    }
+    .pos-product-name {
+        font-size: 10px;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 2.5em;
+    }
+    .pos-product-price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 4px;
+        font-size: 11px;
+    }
 </style>
 @endpush
 <div class="flex flex-col lg:flex-row h-[calc(100vh-0px)] bg-ai-mist">
@@ -55,45 +96,45 @@
 
         <div id="filter-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[24px]"></div>
 
-        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto flex-1 pr-1 pb-2 auto-rows-fr">
+        <div id="product-grid" class="overflow-y-auto flex-1 pr-1 pb-2">
             @foreach ($products as $product)
             @php $initial = strtoupper(substr($product->name, 0, 1)); @endphp
+            <div class="pos-product-cell product-card"
+                 data-id="{{ $product->id }}"
+                 data-name="{{ $product->name }}"
+                 data-price="{{ $product->price }}"
+                 data-stock="{{ $product->stock }}"
+                 data-unit="{{ $product->unit ?? 'Pcs' }}"
+                 data-category="{{ $product->category ?? '' }}"
+                 data-brand="{{ $product->brand ?? '' }}"
+                 data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}"
+                 data-out-of-stock="{{ $product->stock <= 0 ? '1' : '0' }}">
             <button type="button"
                     @disabled($product->stock <= 0)
-                    class="product-card pos-product-card group bg-white border border-ai-grey/80 rounded-lg overflow-hidden text-left transition-all {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}"
-                    data-id="{{ $product->id }}"
-                    data-name="{{ $product->name }}"
-                    data-price="{{ $product->price }}"
-                    data-stock="{{ $product->stock }}"
-                    data-unit="{{ $product->unit ?? 'Pcs' }}"
-                    data-category="{{ $product->category ?? '' }}"
-                    data-brand="{{ $product->brand ?? '' }}"
-                    data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}"
-                    data-out-of-stock="{{ $product->stock <= 0 ? '1' : '0' }}">
+                    class="pos-product-card group bg-white border border-ai-grey/80 rounded-lg overflow-hidden text-left transition-all w-full h-full {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}">
                 <div class="pos-product-thumb">
                     <div class="pos-product-thumb-inner">
                         @if ($product->imageUrl())
                             <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <span class="hidden w-full h-full items-center justify-center text-4xl font-black text-ai-grey/60">{{ $initial }}</span>
+                            <span class="hidden w-full h-full items-center justify-center text-3xl font-black text-ai-grey/60">{{ $initial }}</span>
                         @else
-                            <span class="text-4xl font-black text-ai-grey/60">{{ $initial }}</span>
+                            <span class="text-3xl font-black text-ai-grey/60">{{ $initial }}</span>
                         @endif
                     </div>
                     @if ($product->stock <= 0)
                         <span class="absolute inset-x-0 bottom-0 bg-red-600/90 text-white text-[10px] font-bold text-center py-1 z-10">Out of stock</span>
                     @endif
                 </div>
-                <div class="pos-product-meta px-2.5 py-2">
-                    <div class="text-[11px] font-semibold text-slate-800 line-clamp-2 leading-snug flex-1">
-                        {{ $product->name }}
-                    </div>
-                    <div class="flex items-center justify-between mt-auto pt-1.5 border-t border-slate-100 text-xs">
+                <div class="pos-product-meta">
+                    <div class="pos-product-name">{{ $product->name }}</div>
+                    <div class="pos-product-price-row">
                         <span class="font-bold text-ai-purple">{{ $currency }}{{ number_format($product->price, 2) }}</span>
                         <span class="text-slate-400">{{ $product->stock }} pcs</span>
                     </div>
                 </div>
             </button>
+            </div>
             @endforeach
         </div>
         @if ($products->isEmpty())
