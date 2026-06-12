@@ -82,15 +82,20 @@ class ProductController extends Controller
         ];
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('products.create');
+        $meta = $this->formMeta($request->user()->id);
+
+        return view('products.create', $meta);
     }
 
     public function store(Request $request)
     {
         $data = $this->validated($request);
         unset($data['image']);
+        $data['discount_rate'] = $data['discount_rate'] ?? 0;
+        $data['tax_rate'] = $data['tax_rate'] ?? 0;
+        $data['uom_value'] = $data['uom_value'] ?? 0;
         $product = $request->user()->products()->create($data);
 
         if ($request->hasFile('image')) {
@@ -189,8 +194,9 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $this->authorizeProduct($product);
+        $meta = $this->formMeta($product->user_id);
 
-        return view('products.edit', compact('product'));
+        return view('products.edit', array_merge(compact('product'), $meta));
     }
 
     public function update(Request $request, Product $product)
@@ -199,6 +205,9 @@ class ProductController extends Controller
 
         $data = $this->validated($request);
         unset($data['image']);
+        $data['discount_rate'] = $data['discount_rate'] ?? 0;
+        $data['tax_rate'] = $data['tax_rate'] ?? 0;
+        $data['uom_value'] = $data['uom_value'] ?? 0;
         $product->update($data);
 
         if ($request->hasFile('image')) {
@@ -231,17 +240,34 @@ class ProductController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'sku' => ['nullable', 'string', 'max:100'],
+            'sku' => ['required', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'max:100'],
             'brand' => ['nullable', 'string', 'max:100'],
             'unit' => ['nullable', 'string', 'max:30'],
+            'uom_value' => ['nullable', 'numeric', 'min:0'],
             'barcode' => ['nullable', 'string', 'max:100'],
             'price' => ['required', 'numeric', 'min:0'],
+            'discount_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'min_stock' => ['nullable', 'integer', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
-        ], [], ['image' => 'product photo']);
+        ], [], ['image' => 'product thumbnail']);
+    }
+
+    /** @return array{categories:\Illuminate\Support\Collection,brands:\Illuminate\Support\Collection,uomOptions:list<string>,discountOptions:list<float>,taxOptions:list<float>} */
+    private function formMeta(int $userId): array
+    {
+        $base = Product::query()->where('user_id', $userId);
+
+        return [
+            'categories' => (clone $base)->whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category'),
+            'brands' => (clone $base)->whereNotNull('brand')->where('brand', '!=', '')->distinct()->orderBy('brand')->pluck('brand'),
+            'uomOptions' => ['pc', 'Pcs', 'kg', 'gm', 'liter', 'box', 'pack', 'dozen'],
+            'discountOptions' => [0, 5, 10, 15, 20, 25],
+            'taxOptions' => [0, 5, 7.5, 10, 15],
+        ];
     }
 
     private function authorizeProduct(Product $product): void

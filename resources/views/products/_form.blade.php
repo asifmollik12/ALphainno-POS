@@ -1,57 +1,198 @@
-<form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="bg-white rounded-xl border border-slate-200 p-6 space-y-4 max-w-2xl shadow-sm">
+@php
+    $categories = $categories ?? collect();
+    $brands = $brands ?? collect();
+    $uomOptions = $uomOptions ?? ['pc', 'Pcs', 'kg', 'gm'];
+    $discountOptions = $discountOptions ?? [0, 5, 10, 15, 20];
+    $taxOptions = $taxOptions ?? [0, 5, 7.5, 10, 15];
+    $selectedCategory = old('category', $product?->category);
+    $selectedBrand = old('brand', $product?->brand);
+    $selectedUnit = old('unit', $product?->unit ?? 'pc');
+@endphp
+
+<form method="POST" action="{{ $action }}" enctype="multipart/form-data"
+      class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+      x-data="productForm(@json($categories->values()), @json($brands->values()), @json((bool) ($product?->imageUrl())))">
     @csrf
     @if ($product) @method('PUT') @endif
-    <div class="grid sm:grid-cols-2 gap-4">
-        <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Product name</label>
-            <input name="name" value="{{ old('name', $product?->name) }}" required class="w-full rounded-lg border-slate-300 focus:border-violet-500 focus:ring-violet-500">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">SKU</label>
-            <input name="sku" value="{{ old('sku', $product?->sku) }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Barcode</label>
-            <input name="barcode" value="{{ old('barcode', $product?->barcode) }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <input name="category" value="{{ old('category', $product?->category) }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Brand</label>
-            <input name="brand" value="{{ old('brand', $product?->brand) }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Unit</label>
-            <input name="unit" value="{{ old('unit', $product?->unit ?? 'Pcs') }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Cost price</label>
-            <input type="number" step="0.01" name="cost_price" value="{{ old('cost_price', $product?->cost_price ?? 0) }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Sale price</label>
-            <input type="number" step="0.01" name="price" value="{{ old('price', $product?->price ?? 0) }}" required class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Stock</label>
-            <input type="number" name="stock" value="{{ old('stock', $product?->stock ?? 0) }}" required class="w-full rounded-lg border-slate-300">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Min stock alert</label>
-            <input type="number" name="min_stock" value="{{ old('min_stock', $product?->min_stock ?? 5) }}" class="w-full rounded-lg border-slate-300">
-        </div>
-        <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Product photo</label>
-            @if ($product?->imageUrl())
-                <img src="{{ $product->imageUrl() }}" alt="" class="h-24 w-24 object-cover rounded-lg border mb-2">
-            @endif
-            <input type="file" name="image" accept="image/*" class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-50 file:text-violet-700">
-        </div>
+
+    <div class="px-6 py-5 border-b border-slate-100">
+        <h2 class="text-lg font-bold text-slate-900">{{ $product ? 'Update Product' : 'Create Product' }}</h2>
     </div>
-    <div class="flex gap-3 pt-2">
-        <button class="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-500">{{ $product ? 'Save' : 'Add product' }}</button>
-        <a href="{{ route('products.index') }}" class="px-3 py-2 text-slate-500">Cancel</a>
+
+    <div class="p-6 space-y-5 max-w-4xl">
+        {{-- Name --}}
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Name <span class="text-red-500">*</span></label>
+            <input name="name" value="{{ old('name', $product?->name) }}" required
+                   class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+        </div>
+
+        {{-- Subcategory & Brand --}}
+        <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-sm font-medium text-slate-700">Subcategory</label>
+                    <button type="button" @click="addOption('category')" class="w-6 h-6 rounded bg-ai-navy text-white text-sm leading-none hover:bg-slate-800" title="Add subcategory">+</button>
+                </div>
+                <select name="category" x-ref="categorySelect" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+                    <option value="">Select subcategory</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat }}" @selected($selectedCategory === $cat)>{{ $cat }}</option>
+                    @endforeach
+                    @if ($selectedCategory && ! $categories->contains($selectedCategory))
+                        <option value="{{ $selectedCategory }}" selected>{{ $selectedCategory }}</option>
+                    @endif
+                </select>
+            </div>
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-sm font-medium text-slate-700">Brand</label>
+                    <button type="button" @click="addOption('brand')" class="w-6 h-6 rounded bg-ai-navy text-white text-sm leading-none hover:bg-slate-800" title="Add brand">+</button>
+                </div>
+                <select name="brand" x-ref="brandSelect" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+                    <option value="">Select Brand</option>
+                    @foreach ($brands as $brand)
+                        <option value="{{ $brand }}" @selected($selectedBrand === $brand)>{{ $brand }}</option>
+                    @endforeach
+                    @if ($selectedBrand && ! $brands->contains($selectedBrand))
+                        <option value="{{ $selectedBrand }}" selected>{{ $selectedBrand }}</option>
+                    @endif
+                </select>
+            </div>
+        </div>
+
+        {{-- UoM & UoM Value --}}
+        <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">UoM</label>
+                <select name="unit" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+                    @foreach ($uomOptions as $uom)
+                        <option value="{{ $uom }}" @selected($selectedUnit === $uom)>{{ $uom }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">UoM Value</label>
+                <input type="number" step="0.01" name="uom_value" value="{{ old('uom_value', $product?->uom_value ?? 0) }}"
+                       class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+            </div>
+        </div>
+
+        {{-- Sale Price & Reorder --}}
+        <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Sale Price</label>
+                <input type="number" step="0.01" name="price" value="{{ old('price', $product?->price ?? 0) }}" required
+                       class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Reorder Quantity</label>
+                <input type="number" name="min_stock" value="{{ old('min_stock', $product?->min_stock ?? 0) }}"
+                       class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+            </div>
+        </div>
+
+        {{-- SKU & Thumbnail --}}
+        <div class="grid sm:grid-cols-2 gap-5 items-start">
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">SKU No <span class="text-red-500">*</span></label>
+                    <input name="sku" value="{{ old('sku', $product?->sku) }}" required
+                           class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Upload Thumbnail Image</label>
+                    <label class="flex flex-col items-center justify-center w-full max-w-[180px] aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer overflow-hidden relative">
+                        <input type="file" name="image" accept="image/*" class="sr-only" @change="previewImage($event)">
+                        <div x-show="!preview && !existing" class="text-center p-4">
+                            <span class="inline-flex w-10 h-10 items-center justify-center rounded-full bg-white border border-slate-200 text-xl text-slate-400 mb-2">+</span>
+                            <span class="block text-sm text-slate-500">Upload</span>
+                        </div>
+                        <img x-show="preview" :src="preview" alt="" class="absolute inset-0 w-full h-full object-cover">
+                        @if ($product?->imageUrl())
+                            <img x-show="!preview && existing" src="{{ $product->imageUrl() }}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                        @endif
+                    </label>
+                </div>
+            </div>
+            <div class="grid sm:grid-cols-1 gap-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Discount</label>
+                    <select name="discount_rate" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+                        <option value="">Select discount</option>
+                        @foreach ($discountOptions as $rate)
+                            <option value="{{ $rate }}" @selected((string) old('discount_rate', $product?->discount_rate ?? '') === (string) $rate)>{{ $rate }}%</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Product Vat/Tax</label>
+                    <select name="tax_rate" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-ai-purple focus:ring-2 focus:ring-ai-purple/15 outline-none">
+                        <option value="">Select Vat/Tax type</option>
+                        @foreach ($taxOptions as $rate)
+                            <option value="{{ $rate }}" @selected((string) old('tax_rate', $product?->tax_rate ?? '') === (string) $rate)>{{ $rate }}%</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {{-- Inventory extras --}}
+        <details class="rounded-lg border border-slate-200 bg-slate-50/50 open:bg-white">
+            <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700">Inventory &amp; pricing details</summary>
+            <div class="px-4 pb-4 pt-1 grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Purchase Price</label>
+                    <input type="number" step="0.01" name="cost_price" value="{{ old('cost_price', $product?->cost_price ?? 0) }}"
+                           class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Stock Quantity</label>
+                    <input type="number" name="stock" value="{{ old('stock', $product?->stock ?? 0) }}" required
+                           class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Barcode</label>
+                    <input name="barcode" value="{{ old('barcode', $product?->barcode) }}"
+                           class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-3">
+        <button type="submit" class="px-6 py-2.5 rounded-lg bg-ai-navy hover:bg-slate-900 text-white text-sm font-semibold">
+            {{ $product ? 'Update Product' : 'Create Product' }}
+        </button>
+        <a href="{{ route('products.index') }}" class="px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</a>
     </div>
 </form>
+
+@once
+@push('scripts')
+<script>
+function productForm(categories, brands, hasImage) {
+    return {
+        preview: null,
+        existing: hasImage,
+        previewImage(e) {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            this.preview = URL.createObjectURL(file);
+        },
+        addOption(type) {
+            const label = type === 'category' ? 'New subcategory name' : 'New brand name';
+            const value = prompt(label);
+            if (!value?.trim()) return;
+            const select = type === 'category' ? this.$refs.categorySelect : this.$refs.brandSelect;
+            const opt = document.createElement('option');
+            opt.value = value.trim();
+            opt.textContent = value.trim();
+            opt.selected = true;
+            select.appendChild(opt);
+        },
+    };
+}
+</script>
+@endpush
+@endonce

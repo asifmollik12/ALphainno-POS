@@ -1,6 +1,15 @@
 @extends('layouts.dashboard')
-@section('title', 'Add Product')
+
+@section('title', 'Create Product')
+
 @section('content')
-@include('partials.page-header', ['title' => 'Add Product'])
-@include('products._form', ['product' => null, 'action' => route('products.store')])
+@include('products._form', [
+    'product' => null,
+    'action' => route('products.store'),
+    'categories' => $categories,
+    'brands' => $brands,
+    'uomOptions' => $uomOptions,
+    'discountOptions' => $discountOptions,
+    'taxOptions' => $taxOptions,
+])
 @endsection

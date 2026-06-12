@@ -109,11 +109,11 @@
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between gap-4">
                         <dt class="text-slate-500">Vat/Tax</dt>
-                        <dd class="font-medium text-slate-900">0%</dd>
+                        <dd class="font-medium text-slate-900">{{ number_format($product->tax_rate ?? 0, 1) }}%</dd>
                     </div>
                     <div class="flex justify-between gap-4">
                         <dt class="text-slate-500">Discount</dt>
-                        <dd class="font-medium text-slate-900">0%</dd>
+                        <dd class="font-medium text-slate-900">{{ number_format($product->discount_rate ?? 0, 1) }}%</dd>
                     </div>
                     <div class="flex justify-between gap-4">
                         <dt class="text-slate-500">Date</dt>
