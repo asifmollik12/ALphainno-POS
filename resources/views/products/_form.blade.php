@@ -11,7 +11,7 @@
 
 <form method="POST" action="{{ $action }}" enctype="multipart/form-data"
       class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
-      x-data="productForm(@json($categories->values()), @json($brands->values()), @json((bool) ($product?->imageUrl())))">
+      x-data="productForm(@json($categories->values()), @json($brands->values()))">
     @csrf
     @if ($product) @method('PUT') @endif
 
@@ -102,17 +102,19 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1.5">Upload Thumbnail Image</label>
-                    <label class="flex flex-col items-center justify-center w-full max-w-[180px] aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer overflow-hidden relative">
-                        <input type="file" name="image" accept="image/*" class="sr-only" @change="previewImage($event)">
-                        <div x-show="!preview && !existing" class="text-center p-4">
+                    @php $existingImage = $product?->imageUrl(); @endphp
+                    <label for="product-image-input" class="product-thumb-upload flex flex-col items-center justify-center w-full max-w-[180px] rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer overflow-hidden relative" style="aspect-ratio: 1 / 1;">
+                        <input type="file" id="product-image-input" name="image" accept="image/*" class="sr-only">
+                        <div id="product-upload-placeholder" class="text-center p-4 {{ $existingImage ? 'hidden' : '' }}">
                             <span class="inline-flex w-10 h-10 items-center justify-center rounded-full bg-white border border-slate-200 text-xl text-slate-400 mb-2">+</span>
                             <span class="block text-sm text-slate-500">Upload</span>
                         </div>
-                        <img x-show="preview" :src="preview" alt="" class="absolute inset-0 w-full h-full object-cover">
-                        @if ($product?->imageUrl())
-                            <img x-show="!preview && existing" src="{{ $product->imageUrl() }}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                        @if ($existingImage)
+                            <img id="product-existing-image" src="{{ $existingImage }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-contain p-2 bg-white">
                         @endif
+                        <img id="product-new-preview" alt="" class="hidden absolute inset-0 w-full h-full object-contain p-2 bg-white">
                     </label>
+                    <p class="mt-1.5 text-xs text-slate-400">JPG, PNG or WebP · max 2MB</p>
                 </div>
             </div>
             <div class="grid sm:grid-cols-1 gap-5">
@@ -171,15 +173,8 @@
 @once
 @push('scripts')
 <script>
-function productForm(categories, brands, hasImage) {
+function productForm(categories, brands) {
     return {
-        preview: null,
-        existing: hasImage,
-        previewImage(e) {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            this.preview = URL.createObjectURL(file);
-        },
         addOption(type) {
             const label = type === 'category' ? 'New subcategory name' : 'New brand name';
             const value = prompt(label);
@@ -193,6 +188,18 @@ function productForm(categories, brands, hasImage) {
         },
     };
 }
+
+document.getElementById('product-image-input')?.addEventListener('change', function (e) {
+    const file = e.target.files?.[0];
+    const preview = document.getElementById('product-new-preview');
+    const existing = document.getElementById('product-existing-image');
+    const placeholder = document.getElementById('product-upload-placeholder');
+    if (!file || !preview) return;
+    preview.src = URL.createObjectURL(file);
+    preview.classList.remove('hidden');
+    existing?.classList.add('hidden');
+    placeholder?.classList.add('hidden');
+});
 </script>
 @endpush
 @endonce

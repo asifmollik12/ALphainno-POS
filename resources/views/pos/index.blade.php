@@ -492,13 +492,13 @@
     }
 
     document.querySelectorAll('.product-card').forEach(c => {
-        c.onclick = () => {
+        c.querySelector('button')?.addEventListener('click', () => {
             if (c.dataset.outOfStock === '1' || +c.dataset.stock <= 0) {
                 return showPosAlert(stockError(c.dataset.name));
             }
             unlockSound();
             addProduct(+c.dataset.id);
-        };
+        });
     });
     document.getElementById('search-name').oninput = filterProducts;
     document.getElementById('scan-barcode').onkeydown = e => {
