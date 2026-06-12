@@ -25,12 +25,10 @@
                 Send
             </a>
             <x-row-actions-dropdown>
-                @if ($purchase->due_amount > 0)
                 <button type="button" @click="close(); $dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-left">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     Make a payment
                 </button>
-                @endif
                 <a href="{{ $mailto }}" @class(['flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700', 'pointer-events-none opacity-50' => ! $supplierEmail])>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                     Email
@@ -123,6 +121,8 @@
 
             @if ($purchase->due_amount > 0)
             <button type="button" @click="$dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })" class="mt-4 w-full py-2 rounded-lg border border-ai-purple text-ai-purple text-sm font-medium hover:bg-violet-50">Make a payment</button>
+            @else
+            <button type="button" @click="$dispatch('open-pay', { id: {{ $purchase->id }}, ref: @json($purchase->reference), due: 0 })" class="mt-4 w-full py-2 rounded-lg border border-slate-200 text-slate-500 text-sm font-medium hover:bg-slate-50">Make a payment</button>
             @endif
         </div>
 

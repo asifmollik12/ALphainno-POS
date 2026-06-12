@@ -51,7 +51,8 @@
                     <input type="text" name="payment_reference" x-model="invoiceRef" class="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm">
                 </div>
 
-                <button type="submit" class="w-full py-3 rounded-lg bg-ai-navy hover:bg-slate-900 text-white font-semibold text-sm">Pay Now</button>
+                <button type="submit" :disabled="due <= 0" class="w-full py-3 rounded-lg bg-ai-navy hover:bg-slate-900 text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed">Pay Now</button>
+                <p x-show="due <= 0" class="text-center text-xs text-slate-500">This invoice is already fully paid.</p>
             </form>
         </div>
     </div>
