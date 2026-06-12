@@ -114,7 +114,12 @@
             </dl>
 
             @if ($purchase->due_amount > 0)
-            <button type="button" @click="window.openPurchasePayModal(@json(['id' => $purchase->id, 'ref' => $purchase->reference, 'due' => (float) $purchase->due_amount]))" class="mt-4 w-full py-2 rounded-lg border border-ai-purple text-ai-purple text-sm font-medium hover:bg-violet-50">Make a payment</button>
+            <button type="button"
+                    data-pay-id="{{ $purchase->id }}"
+                    data-pay-ref="{{ $purchase->reference }}"
+                    data-pay-due="{{ $purchase->due_amount }}"
+                    onclick="window.openPurchasePayModal({ id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })"
+                    class="mt-4 w-full py-2 rounded-lg border border-ai-purple text-ai-purple text-sm font-medium hover:bg-violet-50">Make a payment</button>
             @else
             <button type="button" disabled class="mt-4 w-full py-2 rounded-lg border border-slate-200 text-slate-400 text-sm font-medium opacity-50 cursor-not-allowed" title="No due amount on this invoice">Make a payment</button>
             @endif

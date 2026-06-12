@@ -205,6 +205,16 @@
         if (!detail?.id || due <= 0) {
             return;
         }
+
+        const modalRoot = document.querySelector('[data-purchase-pay-modal]');
+        if (modalRoot && window.Alpine) {
+            const state = window.Alpine.$data(modalRoot);
+            if (state?.openPay) {
+                state.openPay(detail);
+                return;
+            }
+        }
+
         window.dispatchEvent(new CustomEvent('open-pay', { detail, bubbles: true }));
     };
 
@@ -226,9 +236,15 @@
                     return;
                 }
                 this.close();
-                if (typeof window.openPurchasePayModal === 'function') {
-                    window.openPurchasePayModal(detail);
-                }
+                window.openPurchasePayModal(detail);
+            },
+            openPayModalFromButton(button) {
+                if (!button) return;
+                this.openPayModal({
+                    id: Number(button.dataset.payId),
+                    ref: button.dataset.payRef || '',
+                    due: Number(button.dataset.payDue) || 0,
+                });
             },
             position() {
                 const btn = this.$refs.trigger;

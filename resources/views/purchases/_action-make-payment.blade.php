@@ -1,17 +1,13 @@
 @props(['purchase'])
 
-@php
-    $hasDue = (float) $purchase->due_amount > 0;
-    $payDetail = [
-        'id' => $purchase->id,
-        'ref' => $purchase->reference,
-        'due' => (float) $purchase->due_amount,
-    ];
-@endphp
+@php $hasDue = (float) $purchase->due_amount > 0; @endphp
 
 <button type="button"
+        data-pay-id="{{ $purchase->id }}"
+        data-pay-ref="{{ $purchase->reference }}"
+        data-pay-due="{{ $purchase->due_amount }}"
         @if ($hasDue)
-            @click="openPayModal(@json($payDetail))"
+            @click="openPayModalFromButton($event.currentTarget)"
         @endif
         @disabled(! $hasDue)
         class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm {{ $hasDue ? 'hover:bg-slate-50 text-slate-700' : 'opacity-40 cursor-not-allowed text-slate-400' }}"
