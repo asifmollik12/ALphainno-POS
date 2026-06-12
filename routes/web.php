@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
 
+    Route::get('products/print', [ProductController::class, 'print'])->name('products.print');
+    Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
     Route::resource('products', ProductController::class)->except(['show']);
     Route::get('/inventory/shortage', [InventoryController::class, 'shortage'])->name('inventory.shortage');
 

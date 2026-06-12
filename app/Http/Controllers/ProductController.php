@@ -10,12 +10,76 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::query()
-            ->where('user_id', $request->user()->id)
-            ->orderBy('name')
-            ->paginate(20);
+        $userId = $request->user()->id;
+        $query = Product::query()->where('user_id', $userId);
 
-        return view('products.index', compact('products'));
+        $stats = $this->productStats($userId);
+
+        if ($search = trim((string) $request->input('q', ''))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%")
+                    ->orWhere('barcode', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->orderBy('name')->paginate(20)->withQueryString();
+        $currency = $request->user()->shopSetting?->currency ?? '৳';
+
+        return view('products.index', compact('products', 'stats', 'currency'));
+    }
+
+    public function print(Request $request)
+    {
+        $userId = $request->user()->id;
+        $products = Product::query()->where('user_id', $userId)->orderBy('name')->get();
+        $stats = $this->productStats($userId);
+        $setting = $request->user()->shopSetting;
+        $currency = $setting?->currency ?? '৳';
+
+        return view('products.print', compact('products', 'stats', 'setting', 'currency'));
+    }
+
+    public function export(Request $request)
+    {
+        $userId = $request->user()->id;
+        $products = Product::query()->where('user_id', $userId)->orderBy('name')->get();
+        $filename = 'products-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($products) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['ID', 'Name', 'Brand', 'Category', 'SKU', 'Purchase Price', 'Sale Price', 'Quantity', 'UOM', 'Reorder Qty']);
+            foreach ($products as $p) {
+                fputcsv($out, [
+                    $p->id,
+                    $p->name,
+                    $p->brand,
+                    $p->category,
+                    $p->sku,
+                    $p->cost_price,
+                    $p->price,
+                    $p->stock,
+                    $p->unit ?? 'Pcs',
+                    $p->min_stock,
+                ]);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    /** @return array{unique:int,sale_value:float,purchase_value:float,short_count:int} */
+    private function productStats(int $userId): array
+    {
+        $base = Product::query()->where('user_id', $userId);
+
+        return [
+            'unique' => (clone $base)->count(),
+            'sale_value' => (float) ((clone $base)->selectRaw('COALESCE(SUM(stock * price), 0) as v')->value('v') ?? 0),
+            'purchase_value' => (float) ((clone $base)->selectRaw('COALESCE(SUM(stock * cost_price), 0) as v')->value('v') ?? 0),
+            'short_count' => (clone $base)->whereColumn('stock', '<=', 'min_stock')->count(),
+        ];
     }
 
     public function create()
