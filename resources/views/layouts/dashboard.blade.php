@@ -15,14 +15,19 @@
     @stack('head')
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased">
+@php($posFullscreen = View::hasSection('pos_fullscreen'))
 <div class="flex min-h-screen">
     {{-- Sidebar --}}
     <aside class="w-64 bg-[#0f172a] text-slate-200 flex flex-col fixed inset-y-0 left-0 z-30">
         <div class="px-5 py-5 border-b border-slate-800">
             <div class="flex items-center gap-3">
+                @if ($shopSetting?->logoUrl())
+                    <img src="{{ $shopSetting->logoUrl() }}" alt="" class="w-10 h-10 rounded-xl object-contain bg-white p-0.5">
+                @else
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
+                @endif
                 <div>
                     <div class="font-bold text-white text-sm">{{ $shopSetting->company_name ?? 'Alphainno POS' }}</div>
                     <div class="text-[11px] text-slate-500 uppercase tracking-wider">Point of Sale</div>
@@ -68,6 +73,7 @@
 
     {{-- Main --}}
     <div class="flex-1 ml-64 flex flex-col min-h-screen">
+        @unless($posFullscreen)
         <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
             <div class="flex items-center gap-2">
                 <a href="{{ route('purchases.create') }}" class="px-3 py-1.5 rounded-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium">Create Purchase</a>
@@ -87,8 +93,9 @@
                 </form>
             </div>
         </header>
+        @endunless
 
-        <main class="flex-1 p-6">
+        <main class="flex-1 {{ $posFullscreen ? 'p-0 overflow-hidden' : 'p-6' }}">
             @if (session('success'))
                 <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 text-sm">{{ session('success') }}</div>
             @endif

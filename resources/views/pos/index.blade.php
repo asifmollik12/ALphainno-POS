@@ -1,5 +1,7 @@
 @extends('layouts.dashboard')
 
+@section('pos_fullscreen', true)
+
 @section('title', 'POS')
 
 @php
@@ -9,24 +11,24 @@
 @endphp
 
 @section('content')
-<div class="-m-6 flex flex-col lg:flex-row min-h-[calc(100vh-4rem)] bg-slate-100">
+<div class="flex flex-col lg:flex-row h-[calc(100vh-0px)] bg-slate-100">
     {{-- Left: Product picker --}}
-    <div class="lg:w-[42%] xl:w-[38%] bg-slate-200/80 border-r border-slate-300 p-4 flex flex-col">
-        <div class="bg-white rounded-lg border border-slate-200 p-3 shadow-sm mb-3">
-            <div class="flex gap-0 mb-3">
-                <button type="button" id="tab-category" class="filter-tab flex-1 py-2 text-sm font-semibold rounded-l-md bg-blue-600 text-white">Category</button>
-                <button type="button" id="tab-brand" class="filter-tab flex-1 py-2 text-sm font-semibold rounded-r-md bg-emerald-800 text-white opacity-80">Brand</button>
+    <div class="lg:w-[42%] xl:w-[38%] bg-[#e8eaed] border-r border-slate-300 p-3 flex flex-col min-h-[50vh] lg:min-h-0">
+        <div class="bg-white rounded-md border border-slate-200 p-3 shadow-sm mb-2">
+            <div class="flex mb-2 overflow-hidden rounded-md">
+                <button type="button" id="tab-category" class="filter-tab flex-1 py-2.5 text-sm font-bold bg-[#2563eb] text-white">Category</button>
+                <button type="button" id="tab-brand" class="filter-tab flex-1 py-2.5 text-sm font-bold bg-[#1e4d3a] text-white/70">Brand</button>
             </div>
-            <input type="text" id="search-name" placeholder="Search By Name" class="w-full mb-2 rounded border-slate-300 text-sm py-2">
-            <input type="text" id="scan-barcode" placeholder="Scan Barcode" class="w-full rounded border-2 border-blue-500 text-sm py-2 focus:ring-blue-500">
+            <input type="text" id="search-name" placeholder="Search By Name" class="w-full mb-2 rounded border-slate-300 text-sm py-2 px-3">
+            <input type="text" id="scan-barcode" placeholder="Scan Barcode" autofocus class="w-full rounded border-2 border-blue-500 text-sm py-2 px-3 focus:ring-2 focus:ring-blue-300 outline-none">
         </div>
 
-        <div id="filter-chips" class="flex flex-wrap gap-2 mb-3 min-h-[28px]"></div>
+        <div id="filter-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[24px]"></div>
 
-        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto flex-1 pr-1">
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto flex-1 pr-1 pb-2">
             @foreach ($products as $product)
             <button type="button"
-                    class="product-card bg-white border border-slate-200 rounded-lg overflow-hidden text-left hover:shadow-md hover:border-blue-400 transition"
+                    class="product-card group bg-white border border-slate-200 rounded-md overflow-hidden text-left hover:shadow-lg hover:border-blue-400 transition-all active:scale-[0.98]"
                     data-id="{{ $product->id }}"
                     data-name="{{ $product->name }}"
                     data-price="{{ $product->price }}"
@@ -35,9 +37,17 @@
                     data-category="{{ $product->category ?? '' }}"
                     data-brand="{{ $product->brand ?? '' }}"
                     data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}">
-                <div class="px-2 py-1.5 text-[11px] font-medium text-slate-700 line-clamp-2 min-h-[2.5rem]">{{ $product->name }}</div>
-                <div class="h-20 bg-slate-100 flex items-center justify-center text-slate-400">
-                    <span class="text-2xl font-bold opacity-30">{{ strtoupper(substr($product->name, 0, 1)) }}</span>
+                <div class="px-2 py-1.5 text-[11px] font-semibold text-slate-800 line-clamp-2 min-h-[2.25rem] leading-tight">{{ $product->name }}</div>
+                <div class="h-[72px] bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center overflow-hidden">
+                    @if ($product->imageUrl())
+                        <img src="{{ $product->imageUrl() }}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                    @else
+                        <span class="text-3xl font-black text-slate-200">{{ strtoupper(substr($product->name, 0, 1)) }}</span>
+                    @endif
+                </div>
+                <div class="px-2 py-1.5 flex items-center justify-between border-t bg-white text-xs">
+                    <span class="font-bold text-emerald-700">{{ $currency }}{{ number_format($product->price, 2) }}</span>
+                    <span class="text-slate-400">{{ $product->stock }} pcs</span>
                 </div>
             </button>
             @endforeach
@@ -48,7 +58,11 @@
     </div>
 
     {{-- Right: Checkout --}}
-    <div class="flex-1 flex flex-col bg-white">
+    <div class="flex-1 flex flex-col bg-white min-h-[50vh] lg:min-h-0">
+        <div class="bg-slate-800 text-white px-4 py-2 flex items-center justify-between text-sm">
+            <span class="font-semibold">Checkout</span>
+            <span class="text-slate-300">{{ $warehouse }} · Tax {{ $taxRate }}%</span>
+        </div>
         <form method="POST" action="{{ route('pos.checkout') }}" id="checkout-form" class="flex flex-col flex-1">
             @csrf
             <div class="grid md:grid-cols-3 gap-0 border-b border-slate-200">
@@ -280,8 +294,18 @@
         if (p) { addProduct(p.id); e.target.value = ''; }
         else alert('Product not found');
     };
-    document.getElementById('tab-category').onclick = () => { filterMode='category'; activeFilter=''; document.getElementById('tab-category').classList.replace('opacity-80',''); document.getElementById('tab-brand').classList.add('opacity-80'); renderChips(); filterProducts(); };
-    document.getElementById('tab-brand').onclick = () => { filterMode='brand'; activeFilter=''; document.getElementById('tab-brand').classList.remove('opacity-80'); document.getElementById('tab-category').classList.add('opacity-80'); renderChips(); filterProducts(); };
+    document.getElementById('tab-category').onclick = () => {
+        filterMode='category'; activeFilter='';
+        document.getElementById('tab-category').className = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-[#2563eb] text-white';
+        document.getElementById('tab-brand').className = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-[#1e4d3a] text-white/70';
+        renderChips(); filterProducts();
+    };
+    document.getElementById('tab-brand').onclick = () => {
+        filterMode='brand'; activeFilter='';
+        document.getElementById('tab-brand').className = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-[#1e4d3a] text-white';
+        document.getElementById('tab-category').className = 'filter-tab flex-1 py-2.5 text-sm font-bold bg-[#2563eb] text-white/70';
+        renderChips(); filterProducts();
+    };
     document.getElementById('cancel-btn').onclick = () => { cart.clear(); renderCart(); };
     renderChips();
 

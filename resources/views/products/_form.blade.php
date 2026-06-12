@@ -1,4 +1,4 @@
-<form method="POST" action="{{ $action }}" class="bg-white rounded-xl border border-slate-200 p-6 space-y-4 max-w-2xl shadow-sm">
+<form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="bg-white rounded-xl border border-slate-200 p-6 space-y-4 max-w-2xl shadow-sm">
     @csrf
     @if ($product) @method('PUT') @endif
     <div class="grid sm:grid-cols-2 gap-4">
@@ -41,6 +41,13 @@
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Min stock alert</label>
             <input type="number" name="min_stock" value="{{ old('min_stock', $product?->min_stock ?? 5) }}" class="w-full rounded-lg border-slate-300">
+        </div>
+        <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Product photo</label>
+            @if ($product?->imageUrl())
+                <img src="{{ $product->imageUrl() }}" alt="" class="h-24 w-24 object-cover rounded-lg border mb-2">
+            @endif
+            <input type="file" name="image" accept="image/*" class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-50 file:text-violet-700">
         </div>
     </div>
     <div class="flex gap-3 pt-2">

@@ -37,7 +37,11 @@
         @if($setting?->email) Email: {{ $setting->email }}@endif
     </div>
     <div class="brand">
-        <h1>{{ $setting->company_name ?? 'QuickPOS' }}</h1>
+        @if ($setting?->logoUrl())
+            <img src="{{ $setting->logoUrl() }}" alt="Logo" style="max-height:56px;margin-bottom:8px;">
+        @else
+            <h1>{{ $setting->company_name ?? 'QuickPOS' }}</h1>
+        @endif
         <div class="meta">
             <div><strong>{{ $sale->reference }}</strong></div>
             <div>Order Date: {{ optional($sale->sale_date)->format('n/j/Y') ?? now()->format('n/j/Y') }}</div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Uploads;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +16,7 @@ class Product extends Model
         'brand',
         'unit',
         'barcode',
+        'image_path',
         'price',
         'cost_price',
         'stock',
@@ -39,5 +41,10 @@ class Product extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function imageUrl(): ?string
+    {
+        return Uploads::url($this->image_path);
     }
 }
