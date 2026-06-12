@@ -25,11 +25,11 @@
 
         <div id="filter-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[24px]"></div>
 
-        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto flex-1 pr-1 pb-2">
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 overflow-y-auto flex-1 pr-1 pb-2">
             @foreach ($products as $product)
             <button type="button"
                     @disabled($product->stock <= 0)
-                    class="product-card group bg-white border border-ai-grey/80 rounded-md overflow-hidden text-left transition-all {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}"
+                    class="product-card group flex flex-col bg-white border border-ai-grey/80 rounded-lg overflow-hidden text-left transition-all {{ $product->stock <= 0 ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-lg hover:border-ai-cyan active:scale-[0.98]' }}"
                     data-id="{{ $product->id }}"
                     data-name="{{ $product->name }}"
                     data-price="{{ $product->price }}"
@@ -39,22 +39,24 @@
                     data-brand="{{ $product->brand ?? '' }}"
                     data-barcode="{{ $product->barcode ?? $product->sku ?? '' }}"
                     data-out-of-stock="{{ $product->stock <= 0 ? '1' : '0' }}">
-                <div class="px-2 py-1.5 text-[11px] font-semibold text-slate-800 line-clamp-2 min-h-[2.25rem] leading-tight">
-                    {{ $product->name }}
-                    @if ($product->stock <= 0)
-                        <span class="block text-[10px] text-red-600 font-bold mt-0.5">Out of stock</span>
-                    @endif
-                </div>
-                <div class="h-[72px] bg-gradient-to-br from-ai-sky/50 to-ai-mist flex items-center justify-center overflow-hidden">
+                <div class="relative aspect-square w-full bg-gradient-to-br from-ai-sky/40 to-ai-mist flex items-center justify-center overflow-hidden">
                     @if ($product->imageUrl())
-                        <img src="{{ $product->imageUrl() }}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                        <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200">
                     @else
-                        <span class="text-3xl font-black text-ai-grey/80">{{ strtoupper(substr($product->name, 0, 1)) }}</span>
+                        <span class="text-4xl font-black text-ai-grey/60">{{ strtoupper(substr($product->name, 0, 1)) }}</span>
+                    @endif
+                    @if ($product->stock <= 0)
+                        <span class="absolute inset-x-0 bottom-0 bg-red-600/90 text-white text-[10px] font-bold text-center py-1">Out of stock</span>
                     @endif
                 </div>
-                <div class="px-2 py-1.5 flex items-center justify-between border-t bg-white text-xs">
-                    <span class="font-bold text-ai-purple">{{ $currency }}{{ number_format($product->price, 2) }}</span>
-                    <span class="text-slate-400">{{ $product->stock }} pcs</span>
+                <div class="flex flex-col flex-1 px-2 py-2 min-h-[4.5rem]">
+                    <div class="text-[11px] font-semibold text-slate-800 line-clamp-2 leading-snug flex-1">
+                        {{ $product->name }}
+                    </div>
+                    <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-100 text-xs">
+                        <span class="font-bold text-ai-purple">{{ $currency }}{{ number_format($product->price, 2) }}</span>
+                        <span class="text-slate-400">{{ $product->stock }} pcs</span>
+                    </div>
                 </div>
             </button>
             @endforeach
