@@ -133,6 +133,37 @@
         </main>
     </div>
 </div>
+<script>
+    function rowActionsDropdown() {
+        return {
+            open: false,
+            toggle() {
+                this.open = !this.open;
+                if (this.open) {
+                    this.$nextTick(() => this.position());
+                }
+            },
+            close() {
+                this.open = false;
+            },
+            position() {
+                const btn = this.$refs.trigger;
+                const menu = this.$refs.menu;
+                if (!btn || !menu) return;
+                const rect = btn.getBoundingClientRect();
+                const gap = 4;
+                let left = rect.right - menu.offsetWidth;
+                let top = rect.bottom + gap;
+                if (left < 8) left = 8;
+                if (top + menu.offsetHeight > window.innerHeight - 8) {
+                    top = rect.top - menu.offsetHeight - gap;
+                }
+                menu.style.top = `${top}px`;
+                menu.style.left = `${left}px`;
+            },
+        };
+    }
+</script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 @stack('scripts')
 </body>
