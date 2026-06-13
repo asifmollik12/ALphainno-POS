@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('purchases/print', [PurchaseController::class, 'print'])->name('purchases.print');
     Route::get('purchases/export', [PurchaseController::class, 'export'])->name('purchases.export');
     Route::post('purchases/{purchase}/pay', [PurchaseController::class, 'pay'])->name('purchases.pay');
+    Route::post('purchases/{purchase}/refund', [PurchaseController::class, 'refund'])->name('purchases.refund');
     Route::resource('purchases', PurchaseController::class)->only(['index', 'create', 'store', 'show']);
     Route::get('suppliers/print', [SupplierController::class, 'print'])->name('suppliers.print');
     Route::get('suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');

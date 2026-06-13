@@ -193,10 +193,24 @@ class PurchaseController extends Controller
     public function show(Purchase $purchase)
     {
         $this->authorizeOwner($purchase);
-        $purchase->load(['items.product', 'supplier', 'transactions.account']);
-        $currency = auth()->user()->shopSetting?->currency ?? '৳';
+        $purchase->load([
+            'items.product',
+            'supplier',
+            'transactions.account',
+            'purchaseReturns.items',
+        ]);
 
-        return view('purchases.show', compact('purchase', 'currency'));
+        $computedReturn = (float) $purchase->purchaseReturns->sum('total');
+        if ($computedReturn > 0 && round((float) $purchase->returned_amount, 2) !== round($computedReturn, 2)) {
+            $purchase->update(['returned_amount' => $computedReturn]);
+            $purchase->recalculatePaymentState();
+            $purchase->refresh();
+        }
+
+        $currency = auth()->user()->shopSetting?->currency ?? '৳';
+        $refundOwed = $purchase->refundOwed();
+
+        return view('purchases.show', compact('purchase', 'currency', 'refundOwed'));
     }
 
     public function pay(Request $request, Purchase $purchase)
@@ -217,14 +231,8 @@ class PurchaseController extends Controller
 
         DB::transaction(function () use ($purchase, $amount, $data) {
             $newPaid = round($purchase->paid_amount + $amount, 2);
-            $newDue = max(round($purchase->total - $newPaid, 2), 0);
-            $status = $newDue <= 0 ? 'paid' : 'partial';
-
-            $purchase->update([
-                'paid_amount' => $newPaid,
-                'due_amount' => $newDue,
-                'payment_status' => $status,
-            ]);
+            $purchase->update(['paid_amount' => $newPaid]);
+            $purchase->recalculatePaymentState();
 
             $this->recordPayment(
                 $purchase->user_id,
@@ -237,6 +245,42 @@ class PurchaseController extends Controller
         });
 
         return back()->with('success', 'Payment recorded.');
+    }
+
+    public function refund(Request $request, Purchase $purchase)
+    {
+        $this->authorizeOwner($purchase);
+
+        $maxRefund = $purchase->refundOwed();
+        if ($maxRefund <= 0) {
+            return back()->withErrors(['amount' => 'No refund is due on this invoice.']);
+        }
+
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:'.$maxRefund],
+            'refund_date' => ['required', 'date'],
+            'payment_method' => ['nullable', 'string', 'max:30'],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $amount = min((float) $data['amount'], $maxRefund);
+
+        DB::transaction(function () use ($purchase, $amount, $data) {
+            $purchase->increment('refunded_amount', $amount);
+            $purchase->refresh();
+            $purchase->recalculatePaymentState();
+
+            $this->recordRefund(
+                $purchase->user_id,
+                $purchase,
+                $amount,
+                $data['refund_date'],
+                $data['payment_method'] ?? 'cash',
+                $data['payment_reference'] ?? null
+            );
+        });
+
+        return back()->with('success', 'Refund recorded.');
     }
 
     /** @return array{count:int,total:float,paid:float,due:float,returns:float} */
@@ -286,5 +330,31 @@ class PurchaseController extends Controller
             'related_id' => $purchase->id,
         ]);
         $cash->decrement('current_balance', $amount);
+    }
+
+    private function recordRefund(int $userId, Purchase $purchase, float $amount, string $date, string $method, ?string $reference = null): void
+    {
+        $cash = Account::where('user_id', $userId)->where('code', '1000')->first();
+        if (! $cash) {
+            return;
+        }
+
+        $desc = 'Purchase refund ('.$method.')';
+        if ($reference) {
+            $desc .= ' — '.$reference;
+        }
+
+        Transaction::create([
+            'user_id' => $userId,
+            'account_id' => $cash->id,
+            'type' => 'credit',
+            'amount' => $amount,
+            'reference' => $purchase->reference,
+            'description' => $desc,
+            'transaction_date' => $date,
+            'related_type' => Purchase::class,
+            'related_id' => $purchase->id,
+        ]);
+        $cash->increment('current_balance', $amount);
     }
 }

@@ -11,26 +11,26 @@
         default => 'bg-red-100 text-red-700',
     };
     $gmailUrl = $purchase->gmailComposeUrl();
+    $returnedValue = (float) $purchase->returned_amount;
+    $refundedAmount = (float) ($purchase->refunded_amount ?? 0);
+    $displayPaid = max(0, round((float) $purchase->paid_amount - $refundOwed, 2));
+    $returnProductUrl = route('purchase-returns.create', ['purchase_id' => $purchase->id]);
 @endphp
 
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
     <div class="xl:col-span-8 space-y-4">
         <div class="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" onclick="window.print()" class="px-5 py-2 rounded-lg bg-ai-purple hover:bg-violet-600 text-white text-sm font-medium">Print</button>
-            <a href="{{ $gmailUrl ?? '#' }}" target="_blank" rel="noopener" @class(['px-5 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium inline-flex items-center gap-2', 'pointer-events-none opacity-50' => ! $gmailUrl])>
+            <button type="button" onclick="window.print()" class="px-5 py-2 rounded-lg bg-ai-navy hover:bg-slate-900 text-white text-sm font-medium">Print</button>
+            <a href="{{ $gmailUrl ?? '#' }}" target="_blank" rel="noopener" @class(['px-5 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium inline-flex items-center gap-2 text-slate-700 hover:bg-slate-50', 'pointer-events-none opacity-50' => ! $gmailUrl])>
                 <svg class="w-4 h-4 text-ai-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 Send
             </a>
             <x-row-actions-dropdown>
                 @include('purchases._action-make-payment', ['purchase' => $purchase])
-                <a href="{{ $gmailUrl ?? '#' }}" target="_blank" rel="noopener" @class(['flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700', 'pointer-events-none opacity-50' => ! $gmailUrl]) @click="close()">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    Email
+                <a href="{{ $returnProductUrl }}" class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-sm" @click="close()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    Return Product
                 </a>
-                <button type="button" onclick="window.print()" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-50 text-slate-700 text-left">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    Print
-                </button>
             </x-row-actions-dropdown>
         </div>
 
@@ -68,7 +68,38 @@
                 </table>
             </div>
 
-            <div x-show="tab === 'returns'" x-cloak class="p-8 text-center text-slate-400 text-sm">No return products for this invoice.</div>
+            <div x-show="tab === 'returns'" x-cloak class="overflow-x-auto">
+                @if ($purchase->purchaseReturns->isEmpty())
+                    <div class="p-8 text-center text-slate-400 text-sm">No return products for this invoice.</div>
+                @else
+                    <table class="w-full text-sm">
+                        <thead class="bg-ai-mist text-slate-600 text-xs uppercase">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Return ID</th>
+                                <th class="px-4 py-3 text-left">Date</th>
+                                <th class="px-4 py-3 text-left">Product</th>
+                                <th class="px-4 py-3 text-right">Qty</th>
+                                <th class="px-4 py-3 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach ($purchase->purchaseReturns as $return)
+                                @foreach ($return->items as $item)
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('purchase-returns.show', $return) }}" class="text-ai-cyan hover:underline font-medium">{{ $return->reference }}</a>
+                                    </td>
+                                    <td class="px-4 py-3">{{ $return->return_date->format('M d, Y') }}</td>
+                                    <td class="px-4 py-3">{{ $item->product_name }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $item->quantity }}</td>
+                                    <td class="px-4 py-3 text-right">{{ number_format($item->subtotal, 2) }}</td>
+                                </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
 
             <div x-show="tab === 'transactions'" x-cloak class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -84,7 +115,9 @@
                         <tr>
                             <td class="px-4 py-3">{{ $txn->transaction_date->format('M d, Y') }}</td>
                             <td class="px-4 py-3">{{ $txn->description }}</td>
-                            <td class="px-4 py-3 text-right font-medium">{{ $fmt($txn->amount) }}</td>
+                            <td class="px-4 py-3 text-right font-medium {{ $txn->type === 'credit' ? 'text-emerald-600' : '' }}">
+                                {{ $txn->type === 'credit' ? '+' : '-' }}{{ $fmt($txn->amount) }}
+                            </td>
                         </tr>
                         @empty
                         <tr><td colspan="3" class="px-4 py-8 text-center text-slate-400">No payments recorded yet.</td></tr>
@@ -107,21 +140,26 @@
             <div class="text-sm text-slate-500 mb-4">Invoice Date: {{ $purchase->purchase_date->format('M d, Y') }}</div>
 
             <dl class="space-y-2 text-sm border-t border-slate-100 pt-4">
-                <div class="flex justify-between"><dt class="text-slate-500">Total Amount</dt><dd class="font-medium">{{ $fmt($purchase->total) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-500">Total Amount</dt><dd class="font-medium">{{ number_format($purchase->total, 2) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-slate-500">Total Tax</dt><dd>+ {{ number_format($purchase->tax_amount ?? 0, 0) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-slate-500">Total Paid Amount</dt><dd class="text-emerald-600">- {{ number_format($purchase->paid_amount, 2) }}</dd></div>
+                @if ($returnedValue > 0)
+                <div class="flex justify-between"><dt class="text-slate-500">Return Product Value</dt><dd class="text-red-600">- {{ number_format($returnedValue, 2) }}</dd></div>
+                @endif
+                <div class="flex justify-between"><dt class="text-slate-500">Return Amount</dt><dd>+ {{ number_format($refundedAmount, 0) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-500">Total Paid Amount</dt><dd class="text-emerald-600">- {{ number_format($displayPaid, 2) }}</dd></div>
                 <div class="flex justify-between font-bold pt-2 border-t"><dt>Due Amount</dt><dd class="{{ $purchase->due_amount > 0 ? 'text-red-600' : '' }}">{{ number_format($purchase->due_amount, 2) }}</dd></div>
             </dl>
 
             @if ($purchase->due_amount > 0)
             <button type="button"
-                    data-pay-id="{{ $purchase->id }}"
-                    data-pay-ref="{{ $purchase->reference }}"
-                    data-pay-due="{{ $purchase->due_amount }}"
                     onclick="window.openPurchasePayModal({ id: {{ $purchase->id }}, ref: @json($purchase->reference), due: {{ $purchase->due_amount }} })"
                     class="mt-4 w-full py-2 rounded-lg border border-ai-purple text-ai-purple text-sm font-medium hover:bg-violet-50">Make a payment</button>
+            @elseif ($refundOwed > 0)
+            <button type="button"
+                    onclick="document.getElementById('purchase-refund-modal').classList.remove('hidden')"
+                    class="mt-4 w-full py-2 rounded-lg border border-ai-cyan text-ai-cyan text-sm font-medium hover:bg-cyan-50">Get Refund</button>
             @else
-            <button type="button" disabled class="mt-4 w-full py-2 rounded-lg border border-slate-200 text-slate-400 text-sm font-medium opacity-50 cursor-not-allowed" title="No due amount on this invoice">Make a payment</button>
+            <button type="button" disabled class="mt-4 w-full py-2 rounded-lg border border-slate-200 text-slate-400 text-sm font-medium opacity-50 cursor-not-allowed">Make a payment</button>
             @endif
         </div>
 
@@ -140,5 +178,42 @@
         </div>
     </div>
 </div>
+
+@if ($refundOwed > 0)
+<div id="purchase-refund-modal" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('purchase-refund-modal').classList.add('hidden')"></div>
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Get Refund</h2>
+        <p class="text-sm text-slate-500 mb-4">Refund due from supplier: {{ $fmt($refundOwed) }}</p>
+        <form method="POST" action="{{ route('purchases.refund', $purchase) }}" class="space-y-4">
+            @csrf
+            <div>
+                <label class="text-sm font-medium text-slate-700">Amount</label>
+                <input type="number" name="amount" step="0.01" min="0.01" max="{{ $refundOwed }}" value="{{ $refundOwed }}" required class="w-full mt-1 rounded-lg border-slate-300 text-sm">
+            </div>
+            <div>
+                <label class="text-sm font-medium text-slate-700">Date</label>
+                <input type="date" name="refund_date" value="{{ date('Y-m-d') }}" required class="w-full mt-1 rounded-lg border-slate-300 text-sm">
+            </div>
+            <div>
+                <label class="text-sm font-medium text-slate-700">Method</label>
+                <select name="payment_method" class="w-full mt-1 rounded-lg border-slate-300 text-sm">
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank</option>
+                    <option value="cheque">Cheque</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-slate-700">Reference</label>
+                <input type="text" name="payment_reference" class="w-full mt-1 rounded-lg border-slate-300 text-sm" placeholder="Optional">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="document.getElementById('purchase-refund-modal').classList.add('hidden')" class="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
+                <button type="submit" class="flex-1 py-2 rounded-lg bg-ai-navy hover:bg-slate-900 text-white text-sm font-medium">Record refund</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 @endsection

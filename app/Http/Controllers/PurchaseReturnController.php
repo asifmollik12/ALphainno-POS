@@ -121,7 +121,12 @@ class PurchaseReturnController extends Controller
         $products = Product::where('user_id', $userId)->orderBy('name')->get();
         $purchases = Purchase::where('user_id', $userId)->latest('purchase_date')->limit(50)->get(['id', 'reference', 'supplier_id']);
 
-        return view('purchase-returns.create', compact('suppliers', 'products', 'purchases'));
+        $selectedPurchase = null;
+        if ($purchaseId = $request->input('purchase_id')) {
+            $selectedPurchase = Purchase::where('user_id', $userId)->with('items')->find($purchaseId);
+        }
+
+        return view('purchase-returns.create', compact('suppliers', 'products', 'purchases', 'selectedPurchase'));
     }
 
     public function store(Request $request)
@@ -138,13 +143,14 @@ class PurchaseReturnController extends Controller
         ]);
 
         $userId = $request->user()->id;
+        $purchase = null;
 
         if ($data['purchase_id']) {
             $purchase = Purchase::where('user_id', $userId)->findOrFail($data['purchase_id']);
             $data['supplier_id'] = $data['supplier_id'] ?? $purchase->supplier_id;
         }
 
-        DB::transaction(function () use ($data, $userId) {
+        DB::transaction(function () use ($data, $userId, $purchase) {
             $total = 0;
             foreach ($data['items'] as $item) {
                 $total += round($item['quantity'] * $item['unit_cost'], 2);
@@ -172,7 +178,17 @@ class PurchaseReturnController extends Controller
                 ]);
                 $product->decrement('stock', min($item['quantity'], $product->stock));
             }
+
+            if ($purchase) {
+                $purchase->increment('returned_amount', $total);
+                $purchase->refresh();
+                $purchase->recalculatePaymentState();
+            }
         });
+
+        if ($data['purchase_id'] ?? null) {
+            return redirect()->route('purchases.show', $data['purchase_id'])->with('success', 'Purchase return recorded.');
+        }
 
         return redirect()->route('purchase-returns.index')->with('success', 'Purchase return recorded.');
     }

@@ -10,7 +10,7 @@ class Purchase extends Model
 {
     protected $fillable = [
         'user_id', 'supplier_id', 'reference', 'total', 'tax_amount', 'paid_amount', 'due_amount',
-        'returned_amount', 'payment_status', 'purchase_date', 'notes',
+        'returned_amount', 'refunded_amount', 'payment_status', 'purchase_date', 'notes',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class Purchase extends Model
             'paid_amount' => 'decimal:2',
             'due_amount' => 'decimal:2',
             'returned_amount' => 'decimal:2',
+            'refunded_amount' => 'decimal:2',
             'purchase_date' => 'date',
         ];
     }
@@ -44,6 +45,32 @@ class Purchase extends Model
     {
         return $this->hasMany(Transaction::class, 'related_id')
             ->where('related_type', self::class);
+    }
+
+    public function purchaseReturns(): HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class);
+    }
+
+    public function effectiveTotal(): float
+    {
+        return max(round((float) $this->total - (float) $this->returned_amount, 2), 0);
+    }
+
+    public function refundOwed(): float
+    {
+        return max(0, round((float) $this->paid_amount - $this->effectiveTotal() - (float) $this->refunded_amount, 2));
+    }
+
+    public function recalculatePaymentState(): void
+    {
+        $due = max(round($this->effectiveTotal() - (float) $this->paid_amount + (float) $this->refunded_amount, 2), 0);
+        $status = $due <= 0 ? 'paid' : ((float) $this->paid_amount > 0 ? 'partial' : 'due');
+
+        $this->update([
+            'due_amount' => $due,
+            'payment_status' => $status,
+        ]);
     }
 
     public function isPaid(): bool
