@@ -29,4 +29,9 @@ class PurchaseReturn extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
+    }
 }

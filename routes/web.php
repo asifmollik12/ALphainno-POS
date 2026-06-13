@@ -54,7 +54,9 @@ Route::middleware('auth')->group(function () {
     Route::get('suppliers/demo-csv', [SupplierController::class, 'demoCsv'])->name('suppliers.demo-csv');
     Route::post('suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
     Route::resource('suppliers', SupplierController::class);
-    Route::resource('purchase-returns', PurchaseReturnController::class)->only(['index', 'create', 'store']);
+    Route::get('purchase-returns/print', [PurchaseReturnController::class, 'print'])->name('purchase-returns.print');
+    Route::get('purchase-returns/export', [PurchaseReturnController::class, 'export'])->name('purchase-returns.export');
+    Route::resource('purchase-returns', PurchaseReturnController::class)->only(['index', 'create', 'store', 'show']);
     Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index', 'create', 'store']);
 
     Route::resource('sales', SaleController::class)->only(['index', 'show']);
